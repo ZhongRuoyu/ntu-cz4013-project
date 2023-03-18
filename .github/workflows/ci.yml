@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "**"
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          submodules: recursive
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake
+      - name: Configure
+        run: cmake -S . -B build
+      - name: Build
+        run: cmake --build build -j "$(nproc)"
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          submodules: recursive
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake libgtest-dev \
+            clang-format clang-tidy
+      - name: CMake
+        run: cmake -S . -B build
+      - name: clang-format
+        run: |
+          find . \( -name '*.cc' -or -name '*.h' \) -exec \
+            clang-format --Werror --dry-run --verbose {} +
+      - name: clang-tidy
+        run: |
+          find . \( -name '*.cc' -or -name '*.h' \) -exec \
+            clang-tidy -p build --warnings-as-errors='*' {} +
