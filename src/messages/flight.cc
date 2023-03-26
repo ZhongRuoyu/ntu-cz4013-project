@@ -19,6 +19,14 @@
 
 namespace dfis {
 
+bool Flight::operator==(const Flight &other) const {
+  return this->identifier == other.identifier && this->source == other.source &&
+         this->destination == other.destination &&
+         this->departure_time == other.departure_time &&
+         this->airfare == other.airfare &&
+         this->seat_availability == other.seat_availability;
+}
+
 std::ostream &operator<<(std::ostream &os, const Flight &flight) {
   os << flight.identifier << " (" << flight.source << " -> "
      << flight.destination << ") @ "

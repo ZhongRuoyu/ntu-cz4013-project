@@ -21,6 +21,8 @@ struct Flight {
   srpc::i64 departure_time;
   srpc::f32 airfare;
   srpc::i32 seat_availability;
+
+  [[nodiscard]] bool operator==(const Flight &other) const;
 };
 
 std::ostream &operator<<(std::ostream &os, const Flight &flight);
