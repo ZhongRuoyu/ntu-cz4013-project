@@ -1,0 +1,67 @@
+---
+Checks: |
+  bugprone-*
+  -bugprone-easily-swappable-parameters
+  clang-analyzer-*
+  concurrency-*
+  modernize-*
+  -modernize-avoid-c-arrays
+  -modernize-use-trailing-return-type
+  performance-*
+  portability-*
+  readability-*
+  -readability-function-cognitive-complexity
+  -readability-identifier-length
+  -readability-magic-numbers
+CheckOptions:
+  # https://google.github.io/styleguide/cppguide.html#Type_Names
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypeAliasCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.TemplateParameterCase
+    value: CamelCase
+  # https://google.github.io/styleguide/cppguide.html#Variable_Names
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.MemberCase
+    value: lower_case
+  - key: readability-identifier-naming.MemberSuffix
+    value: _
+  - key: readability-identifier-naming.PublicMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.PublicMemberSuffix
+    value: ""
+  # https://google.github.io/styleguide/cppguide.html#Constant_Names
+  - key: readability-identifier-naming.ConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConstantPrefix
+    value: k
+  - key: readability-identifier-naming.LocalConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.LocalConstantPrefix
+    value: ""
+  - key: readability-identifier-naming.ConstantParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.ConstantParameterPrefix
+    value: ""
+  # https://google.github.io/styleguide/cppguide.html#Function_Names
+  - key: readability-identifier-naming.FunctionCase
+    value: CamelCase
+  # https://google.github.io/styleguide/cppguide.html#Namespace_Names
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+  # https://google.github.io/styleguide/cppguide.html#Enumerator_Names
+  - key: readability-identifier-naming.EnumConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumConstantPrefix
+    value: k
+  # https://google.github.io/styleguide/cppguide.html#Macro_Names
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
