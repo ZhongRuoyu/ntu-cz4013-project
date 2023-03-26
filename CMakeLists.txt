@@ -13,6 +13,7 @@ endfunction()
 add_srpc()
 
 set(DFIS_SRCS
+  src/utils/time.cc
   src/main.cc
 )
 add_executable(dfis)
