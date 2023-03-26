@@ -7,7 +7,7 @@
 using namespace dfis;
 
 TEST(Message, MarshalAndUnmarshalFlights) {
-  dfis::Flight flight1{
+  Flight flight1{
       .identifier = 4013,
       .source = "Guangzhou",
       .destination = "Singapore",
@@ -15,8 +15,8 @@ TEST(Message, MarshalAndUnmarshalFlights) {
       .airfare = 314.15,
       .seat_availability = 42,
   };
-  auto data1 = srpc::Marshal<dfis::Flight>{}(flight1);
-  auto res1 = srpc::Unmarshal<dfis::Flight>{}(data1);
+  auto data1 = srpc::Marshal<Flight>{}(flight1);
+  auto res1 = srpc::Unmarshal<Flight>{}(data1);
   ASSERT_TRUE(res1.second.has_value());
   // NOLINTBEGIN(bugprone-unchecked-optional-access)
   ASSERT_EQ(flight1.identifier, res1.second->identifier);
