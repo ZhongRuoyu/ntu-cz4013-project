@@ -8,6 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 function(add_srpc)
   # Vendor srpc, and statically link to it.
   set(BUILD_SHARED_LIBS OFF)
+  set(BUILD_TESTING OFF)
   add_subdirectory(srpc EXCLUDE_FROM_ALL)
 endfunction()
 add_srpc()
@@ -27,3 +28,9 @@ target_link_libraries(dfis PUBLIC Threads::Threads)
 
 include(GNUInstallDirs)
 install(TARGETS dfis DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+option(BUILD_TESTING "Build tests" OFF)
+if(BUILD_TESTING)
+  enable_testing()
+  add_subdirectory(test)
+endif()

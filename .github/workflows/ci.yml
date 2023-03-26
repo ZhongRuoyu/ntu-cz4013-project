@@ -21,11 +21,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential cmake
+            build-essential cmake libgtest-dev
       - name: Configure
-        run: cmake -S . -B build
+        run: cmake -S . -B build -DBUILD_TESTING=ON
       - name: Build
         run: cmake --build build -j "$(nproc)"
+      - name: Test
+        run: ctest --test-dir build -j "$(nproc)" --output-on-failure
   lint:
     runs-on: ubuntu-latest
     steps:
