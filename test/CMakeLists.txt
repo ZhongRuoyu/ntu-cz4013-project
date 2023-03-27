@@ -6,6 +6,7 @@ target_sources(dfis_tests PRIVATE
   messages/flight.cc
   messages/flight_info.cc
   messages/flight_search.cc
+  messages/seat_availability.cc
   messages/seat_reservation.cc
 )
 target_include_directories(dfis_tests PRIVATE ../src)
