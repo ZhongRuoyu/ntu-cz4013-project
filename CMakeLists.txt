@@ -15,6 +15,7 @@ add_srpc()
 
 set(DFIS_SRCS
   src/messages/flight.cc
+  src/messages/flight_info.cc
   src/messages/flight_search.cc
   src/utils/time.cc
   src/main.cc

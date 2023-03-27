@@ -4,6 +4,7 @@ find_package(GTest REQUIRED)
 add_executable(dfis_tests)
 target_sources(dfis_tests PRIVATE
   messages/flight.cc
+  messages/flight_info.cc
   messages/flight_search.cc
 )
 target_include_directories(dfis_tests PRIVATE ../src)
