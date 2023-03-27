@@ -53,7 +53,7 @@ Marshal<dfis::FlightInfoRequest>::operator()(
   Marshal<i32>{}(request.identifier,
                  std::span<std::byte, sizeof(i32)>{
                      data.data() + p, data.data() + p + sizeof(i32)});
-  p += sizeof(i32);
+  // p += sizeof(i32);
 
   return data;
 }
