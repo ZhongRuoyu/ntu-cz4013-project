@@ -28,6 +28,7 @@ std::ostream &operator<<(std::ostream &os, const FlightSearchRequest &request);
 struct FlightSearchResponse {
   static constexpr MessageType kMessageType =
       MessageType::kFlightSearchResponse;
+  srpc::i32 status_code;
   std::string message;
   std::vector<dfis::Flight> flights;
 };

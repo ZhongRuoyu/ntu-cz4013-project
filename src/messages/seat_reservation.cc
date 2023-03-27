@@ -25,7 +25,7 @@ std::ostream &operator<<(std::ostream &os,
 
 std::ostream &operator<<(std::ostream &os,
                          const SeatReservationResponse &response) {
-  if (response.seats == 0) {
+  if (response.status_code != 0) {
     os << "Error: " << response.message;
   } else {
     os << response.identifier << ": " << response.seats << " seat(s) reserved";
@@ -100,6 +100,9 @@ Marshal<dfis::SeatReservationResponse>::operator()(
                  std::span<std::byte, sizeof(i32)>{data.data(),
                                                    data.data() + sizeof(i32)});
 
+  auto status_code = Marshal<i32>{}(response.status_code);
+  data.insert(data.end(), status_code.begin(), status_code.end());
+
   auto message = Marshal<std::string>{}(response.message);
   data.insert(data.end(), message.begin(), message.end());
 
@@ -128,6 +131,13 @@ Unmarshal<dfis::SeatReservationResponse>::operator()(
 
   i64 p = sizeof(i32);
 
+  if (p + sizeof(i32) > data.size()) {
+    return {0, {}};
+  }
+  auto status_code = Unmarshal<i32>{}(std::span<const std::byte, sizeof(i32)>{
+      data.data() + p, data.data() + p + sizeof(i32)});
+  p += sizeof(i32);
+
   auto message_res = Unmarshal<std::string>{}(
       std::span<const std::byte>{data.data() + p, data.data() + data.size()});
   if (!message_res.second.has_value()) {
@@ -151,6 +161,7 @@ Unmarshal<dfis::SeatReservationResponse>::operator()(
   p += sizeof(i32);
 
   return {p, dfis::SeatReservationResponse{
+                 .status_code = status_code,
                  .message = message,
                  .identifier = identifier,
                  .seats = seats,

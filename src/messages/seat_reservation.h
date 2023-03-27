@@ -29,6 +29,7 @@ std::ostream &operator<<(std::ostream &os,
 struct SeatReservationResponse {
   static constexpr MessageType kMessageType =
       MessageType::kSeatReservationResponse;
+  srpc::i32 status_code;
   std::string message;
   srpc::i32 identifier;
   srpc::i32 seats;

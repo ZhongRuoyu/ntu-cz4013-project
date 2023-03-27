@@ -25,7 +25,7 @@ std::ostream &operator<<(std::ostream &os, const FlightSearchRequest &request) {
 
 std::ostream &operator<<(std::ostream &os,
                          const FlightSearchResponse &response) {
-  if (response.flights.empty()) {
+  if (response.status_code != 0) {
     os << "Error: " << response.message;
   } else {
     for (const auto &flight : response.flights) {
@@ -104,6 +104,9 @@ Marshal<dfis::FlightSearchResponse>::operator()(
                  std::span<std::byte, sizeof(i32)>{data.data(),
                                                    data.data() + sizeof(i32)});
 
+  auto status_code = Marshal<i32>{}(response.status_code);
+  data.insert(data.end(), status_code.begin(), status_code.end());
+
   auto message = Marshal<std::string>{}(response.message);
   data.insert(data.end(), message.begin(), message.end());
 
@@ -129,6 +132,13 @@ Unmarshal<dfis::FlightSearchResponse>::operator()(
 
   i64 p = sizeof(i32);
 
+  if (p + sizeof(i32) > data.size()) {
+    return {0, {}};
+  }
+  auto status_code = Unmarshal<i32>{}(std::span<const std::byte, sizeof(i32)>{
+      data.data() + p, data.data() + p + sizeof(i32)});
+  p += sizeof(i32);
+
   auto message_res = Unmarshal<std::string>{}(
       std::span<const std::byte>{data.data() + p, data.data() + data.size()});
   if (!message_res.second.has_value()) {
@@ -146,6 +156,7 @@ Unmarshal<dfis::FlightSearchResponse>::operator()(
   p += flights_res.first;
 
   return {p, dfis::FlightSearchResponse{
+                 .status_code = status_code,
                  .message = message,
                  .flights = flights,
              }};

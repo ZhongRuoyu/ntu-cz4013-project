@@ -30,6 +30,7 @@ TEST(Message, MarshalAndUnmarshalFlightSearchResponses) {
   };
 
   FlightSearchResponse resp1{
+      .status_code = 1,
       .message = "Flights not found",
       .flights = {},
   };
@@ -37,11 +38,13 @@ TEST(Message, MarshalAndUnmarshalFlightSearchResponses) {
   auto res1 = srpc::Unmarshal<FlightSearchResponse>{}(data1);
   ASSERT_TRUE(res1.second.has_value());
   // NOLINTBEGIN(bugprone-unchecked-optional-access)
+  ASSERT_EQ(resp1.status_code, res1.second->status_code);
   ASSERT_EQ(resp1.message, res1.second->message);
   assert_eq(resp1.flights, res1.second->flights);
   // NOLINTEND(bugprone-unchecked-optional-access)
 
   FlightSearchResponse resp2{
+      .status_code = 0,
       .message = {},
       .flights = {Flight{
                       .identifier = 4013,
@@ -64,6 +67,7 @@ TEST(Message, MarshalAndUnmarshalFlightSearchResponses) {
   auto res2 = srpc::Unmarshal<dfis::FlightSearchResponse>{}(data2);
   ASSERT_TRUE(res2.second.has_value());
   // NOLINTBEGIN(bugprone-unchecked-optional-access)
+  ASSERT_EQ(resp2.status_code, res2.second->status_code);
   ASSERT_EQ(resp2.message, res2.second->message);
   assert_eq(resp2.flights, res2.second->flights);
   // NOLINTEND(bugprone-unchecked-optional-access)
