@@ -67,7 +67,7 @@ Unmarshal<dfis::FlightSearchRequest>::operator()(
   auto message_type = Unmarshal<i32>{}(std::span<const std::byte, sizeof(i32)>{
       data.data(), data.data() + sizeof(i32)});
   if (dfis::MessageType{message_type} !=
-      dfis::MessageType::kFlightSearchRequest) {
+      dfis::FlightSearchRequest::kMessageType) {
     return {0, {}};
   }
 
@@ -123,7 +123,7 @@ Unmarshal<dfis::FlightSearchResponse>::operator()(
   auto message_type = Unmarshal<i32>{}(std::span<const std::byte, sizeof(i32)>{
       data.data(), data.data() + sizeof(i32)});
   if (dfis::MessageType{message_type} !=
-      dfis::MessageType::kFlightSearchResponse) {
+      dfis::FlightSearchResponse::kMessageType) {
     return {0, {}};
   }
 
