@@ -26,7 +26,7 @@ std::ostream &operator<<(std::ostream &os, const FlightSearchRequest &request) {
 std::ostream &operator<<(std::ostream &os,
                          const FlightSearchResponse &response) {
   if (response.flights.empty()) {
-    os << "Error: " << response.message << "\n";
+    os << "Error: " << response.message;
   } else {
     for (const auto &flight : response.flights) {
       os << flight << "\n";
