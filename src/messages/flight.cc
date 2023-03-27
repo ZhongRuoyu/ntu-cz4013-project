@@ -31,7 +31,7 @@ std::ostream &operator<<(std::ostream &os, const Flight &flight) {
   os << flight.identifier << " (" << flight.source << " -> "
      << flight.destination << ") @ "
      << dfis::FormatTimestamp(flight.departure_time) << " $" << flight.airfare
-     << " (" << flight.seat_availability << " seats avail.)";
+     << " (" << flight.seat_availability << " seat(s) avail.)";
   return os;
 }
 
