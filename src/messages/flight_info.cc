@@ -41,19 +41,14 @@ namespace srpc {
 [[nodiscard]] std::vector<std::byte>
 Marshal<dfis::FlightInfoRequest>::operator()(
     const dfis::FlightInfoRequest &request) const {
-  std::vector<std::byte> data(sizeof(i32) + sizeof(i32));
-
-  i64 p = 0;
+  std::vector<std::byte> data(sizeof(i32));
 
   Marshal<i32>{}(static_cast<i32>(dfis::FlightInfoRequest::kMessageType),
-                 std::span<std::byte, sizeof(i32)>{
-                     data.data() + p, data.data() + p + sizeof(i32)});
-  p += sizeof(i32);
+                 std::span<std::byte, sizeof(i32)>{data.data(),
+                                                   data.data() + sizeof(i32)});
 
-  Marshal<i32>{}(request.identifier,
-                 std::span<std::byte, sizeof(i32)>{
-                     data.data() + p, data.data() + p + sizeof(i32)});
-  // p += sizeof(i32);
+  auto identifier = Marshal<i32>{}(request.identifier);
+  data.insert(data.end(), identifier.begin(), identifier.end());
 
   return data;
 }
