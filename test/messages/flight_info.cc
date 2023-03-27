@@ -28,7 +28,7 @@ TEST(Message, MarshalAndUnmarshalFlightInfoResponses) {
   };
 
   FlightInfoResponse resp1{
-      .message = "Flights not found",
+      .message = "Flight not found",
       .flight = {},
   };
   auto data1 = srpc::Marshal<FlightInfoResponse>{}(resp1);
