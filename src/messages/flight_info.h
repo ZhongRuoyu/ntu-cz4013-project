@@ -1,5 +1,5 @@
-#ifndef DFIS_MESSAGES_FLIGHT_INFO_REQUEST_H_
-#define DFIS_MESSAGES_FLIGHT_INFO_REQUEST_H_
+#ifndef DFIS_MESSAGES_FLIGHT_INFO_H_
+#define DFIS_MESSAGES_FLIGHT_INFO_H_
 
 #include <cstddef>
 #include <optional>
@@ -62,4 +62,4 @@ struct Unmarshal<dfis::FlightInfoResponse> {
 
 }  // namespace srpc
 
-#endif  // DFIS_MESSAGES_FLIGHT_INFO_REQUEST_H_
+#endif  // DFIS_MESSAGES_FLIGHT_INFO_H_

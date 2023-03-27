@@ -1,5 +1,5 @@
-#ifndef DFIS_MESSAGES_FLIGHT_SEARCH_REQUEST_H_
-#define DFIS_MESSAGES_FLIGHT_SEARCH_REQUEST_H_
+#ifndef DFIS_MESSAGES_FLIGHT_SEARCH_H_
+#define DFIS_MESSAGES_FLIGHT_SEARCH_H_
 
 #include <cstddef>
 #include <optional>
@@ -65,4 +65,4 @@ struct Unmarshal<dfis::FlightSearchResponse> {
 
 }  // namespace srpc
 
-#endif  // DFIS_MESSAGES_FLIGHT_SEARCH_REQUEST_H_
+#endif  // DFIS_MESSAGES_FLIGHT_SEARCH_H_
