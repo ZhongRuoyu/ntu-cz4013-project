@@ -1,8 +1,7 @@
 #include "messages/flight.h"
 
 #include <gtest/gtest.h>
-
-#include "srpc/types/serialization.h"
+#include <srpc/types/serialization.h>
 
 using namespace dfis;
 

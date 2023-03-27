@@ -1,7 +1,7 @@
 #ifndef DFIS_MESSAGE_MESSAGE_TYPE_H_
 #define DFIS_MESSAGE_MESSAGE_TYPE_H_
 
-#include "srpc/types/integers.h"
+#include <srpc/types/integers.h>
 
 namespace dfis {
 
