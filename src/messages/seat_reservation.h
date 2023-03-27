@@ -30,6 +30,7 @@ struct SeatReservationResponse {
   static constexpr MessageType kMessageType =
       MessageType::kSeatReservationResponse;
   std::string message;
+  srpc::i32 identifier;
   srpc::i32 seats;
 };
 
