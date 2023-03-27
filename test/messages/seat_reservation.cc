@@ -15,7 +15,7 @@ TEST(Message, MarshalAndUnmarshalSeatReservationRequests) {
   ASSERT_TRUE(res1.second.has_value());
   // NOLINTBEGIN(bugprone-unchecked-optional-access)
   ASSERT_EQ(req1.identifier, res1.second->identifier);
-  ASSERT_EQ(req1.identifier, res1.second->identifier);
+  ASSERT_EQ(req1.seats, res1.second->seats);
   // NOLINTEND(bugprone-unchecked-optional-access)
 }
 
