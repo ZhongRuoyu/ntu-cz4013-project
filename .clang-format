@@ -5,7 +5,7 @@ Language: Cpp
 AllowShortCaseLabelsOnASingleLine: true
 DerivePointerAlignment: false
 IncludeCategories:
-  - Regex: ^<(srpc)/.*
+  - Regex: ^<(gtest|srpc)/.*
     Priority: 3
     SortPriority: 0
   - Regex: ^<.*\.h>

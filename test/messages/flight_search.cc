@@ -1,9 +1,9 @@
 #include "messages/flight_search.h"
 
 #include <gtest/gtest.h>
+#include <srpc/types/serialization.h>
 
 #include "messages/flight.h"
-#include "srpc/types/serialization.h"
 
 using namespace dfis;
 
