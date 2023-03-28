@@ -14,8 +14,8 @@ enum class MessageType : srpc::i32 {
   kSeatReservationResponse = 6,
   kSeatAvailabilityMonitoringRequest = 7,
   kSeatAvailabilityMonitoringResponse = 8,
-  kSeatAvailabilityCallbackRequest = 7,
-  kSeatAvailabilityCallbackResponse = 8,
+  kSeatAvailabilityCallbackRequest = 9,
+  kSeatAvailabilityCallbackResponse = 10,
 };
 
 }  // namespace dfis
