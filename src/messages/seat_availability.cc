@@ -20,12 +20,14 @@ namespace dfis {
 
 std::ostream &operator<<(std::ostream &os,
                          const SeatAvailabilityMonitoringRequest &request) {
-  os << request.identifier << " (" << request.monitor_interval_sec << "s)";
+  os << "[" << request.id << "] " << request.identifier << " ("
+     << request.monitor_interval_sec << "s)";
   return os;
 }
 
 std::ostream &operator<<(std::ostream &os,
                          const SeatAvailabilityMonitoringResponse &response) {
+  os << "[" << response.id << "] ";
   if (response.status_code != 0) {
     os << "Error: " << response.message;
   } else {
@@ -37,13 +39,14 @@ std::ostream &operator<<(std::ostream &os,
 
 std::ostream &operator<<(std::ostream &os,
                          const SeatAvailabilityCallbackRequest &request) {
-  os << request.identifier << " (" << request.seat_availability
-     << " seat(s) avail.)";
+  os << "[" << request.id << "] " << request.identifier << " ("
+     << request.seat_availability << " seat(s) avail.)";
   return os;
 }
 
 std::ostream &operator<<(std::ostream &os,
                          const SeatAvailabilityCallbackResponse &response) {
+  os << "[" << response.id << "] ";
   if (response.status_code != 0) {
     os << "Some error(s) occurred in the callback loop";
   } else {

@@ -19,12 +19,14 @@ namespace dfis {
 
 std::ostream &operator<<(std::ostream &os,
                          const SeatReservationRequest &request) {
-  os << request.identifier << " (" << request.seats << ")";
+  os << "[" << request.id << "] " << request.identifier << " (" << request.seats
+     << ")";
   return os;
 }
 
 std::ostream &operator<<(std::ostream &os,
                          const SeatReservationResponse &response) {
+  os << "[" << response.id << "] ";
   if (response.status_code != 0) {
     os << "Error: " << response.message;
   } else {

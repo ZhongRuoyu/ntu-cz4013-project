@@ -19,15 +19,17 @@
 namespace dfis {
 
 std::ostream &operator<<(std::ostream &os, const FlightSearchRequest &request) {
-  os << request.source << " -> " << request.destination;
+  os << "[" << request.id << "] " << request.source << " -> "
+     << request.destination;
   return os;
 }
 
 std::ostream &operator<<(std::ostream &os,
                          const FlightSearchResponse &response) {
   if (response.status_code != 0) {
-    os << "Error: " << response.message;
+    os << "[" << response.id << "] Error: " << response.message;
   } else {
+    os << "[" << response.id << "]\n";
     for (const auto &flight : response.flights) {
       os << flight << "\n";
     }
