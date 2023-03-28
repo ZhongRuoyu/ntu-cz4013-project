@@ -21,6 +21,7 @@ struct SeatAvailabilityMonitoringRequest {
       MessageType::kSeatAvailabilityMonitoringRequest;
   srpc::i64 id;
   srpc::i32 identifier;
+  srpc::u16 port;
   srpc::i32 monitor_interval_sec;
 };
 

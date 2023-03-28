@@ -11,6 +11,7 @@ TEST(Message, MarshalAndUnmarshalSeatAvailabilityMonitoringRequests) {
   SeatAvailabilityMonitoringRequest req1{
       .id = MakeMessageIdentifier(),
       .identifier = 4013,
+      .port = 65535,
       .monitor_interval_sec = 60,
   };
   auto data1 = srpc::Marshal<SeatAvailabilityMonitoringRequest>{}(req1);
@@ -19,6 +20,7 @@ TEST(Message, MarshalAndUnmarshalSeatAvailabilityMonitoringRequests) {
   // NOLINTBEGIN(bugprone-unchecked-optional-access)
   ASSERT_EQ(req1.id, res1.second->id);
   ASSERT_EQ(req1.identifier, res1.second->identifier);
+  ASSERT_EQ(req1.port, res1.second->port);
   ASSERT_EQ(req1.monitor_interval_sec, res1.second->monitor_interval_sec);
   // NOLINTEND(bugprone-unchecked-optional-access)
 }

@@ -20,8 +20,8 @@ namespace dfis {
 
 std::ostream &operator<<(std::ostream &os,
                          const SeatAvailabilityMonitoringRequest &request) {
-  os << "[" << request.id << "] " << request.identifier << " ("
-     << request.monitor_interval_sec << "s)";
+  os << "[" << request.id << "] " << request.identifier << " @ port "
+     << request.port << " (" << request.monitor_interval_sec << "s)";
   return os;
 }
 
@@ -75,6 +75,9 @@ Marshal<dfis::SeatAvailabilityMonitoringRequest>::operator()(
   auto identifier = Marshal<i32>{}(request.identifier);
   data.insert(data.end(), identifier.begin(), identifier.end());
 
+  auto port = Marshal<u16>{}(request.port);
+  data.insert(data.end(), port.begin(), port.end());
+
   auto monitor_interval_sec = Marshal<i32>{}(request.monitor_interval_sec);
   data.insert(data.end(), monitor_interval_sec.begin(),
               monitor_interval_sec.end());
@@ -113,6 +116,13 @@ Unmarshal<dfis::SeatAvailabilityMonitoringRequest>::operator()(
       data.data() + p, data.data() + p + sizeof(i32)});
   p += sizeof(i32);
 
+  if (p + sizeof(u16) > data.size()) {
+    return {0, {}};
+  }
+  auto port = Unmarshal<u16>{}(std::span<const std::byte, sizeof(u16)>{
+      data.data() + p, data.data() + p + sizeof(u16)});
+  p += sizeof(u16);
+
   if (p + sizeof(i32) > data.size()) {
     return {0, {}};
   }
@@ -124,6 +134,7 @@ Unmarshal<dfis::SeatAvailabilityMonitoringRequest>::operator()(
   return {p, dfis::SeatAvailabilityMonitoringRequest{
                  .id = id,
                  .identifier = identifier,
+                 .port = port,
                  .monitor_interval_sec = monitor_interval_sec,
              }};
 }
