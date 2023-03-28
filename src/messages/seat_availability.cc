@@ -66,6 +66,9 @@ Marshal<dfis::SeatAvailabilityMonitoringRequest>::operator()(
       std::span<std::byte, sizeof(i32)>{data.data(),
                                         data.data() + sizeof(i32)});
 
+  auto id = Marshal<i64>{}(request.id);
+  data.insert(data.end(), id.begin(), id.end());
+
   auto identifier = Marshal<i32>{}(request.identifier);
   data.insert(data.end(), identifier.begin(), identifier.end());
 
@@ -93,6 +96,13 @@ Unmarshal<dfis::SeatAvailabilityMonitoringRequest>::operator()(
 
   i64 p = sizeof(i32);
 
+  if (p + sizeof(i64) > data.size()) {
+    return {0, {}};
+  }
+  auto id = Unmarshal<i64>{}(std::span<const std::byte, sizeof(i64)>{
+      data.data() + p, data.data() + p + sizeof(i64)});
+  p += sizeof(i64);
+
   if (p + sizeof(i32) > data.size()) {
     return {0, {}};
   }
@@ -109,6 +119,7 @@ Unmarshal<dfis::SeatAvailabilityMonitoringRequest>::operator()(
   p += sizeof(i32);
 
   return {p, dfis::SeatAvailabilityMonitoringRequest{
+                 .id = id,
                  .identifier = identifier,
                  .monitor_interval_sec = monitor_interval_sec,
              }};
@@ -123,6 +134,9 @@ Marshal<dfis::SeatAvailabilityMonitoringResponse>::operator()(
       static_cast<i32>(dfis::SeatAvailabilityMonitoringResponse::kMessageType),
       std::span<std::byte, sizeof(i32)>{data.data(),
                                         data.data() + sizeof(i32)});
+
+  auto id = Marshal<i64>{}(response.id);
+  data.insert(data.end(), id.begin(), id.end());
 
   auto status_code = Marshal<i32>{}(response.status_code);
   data.insert(data.end(), status_code.begin(), status_code.end());
@@ -156,6 +170,13 @@ Unmarshal<dfis::SeatAvailabilityMonitoringResponse>::operator()(
 
   i64 p = sizeof(i32);
 
+  if (p + sizeof(i64) > data.size()) {
+    return {0, {}};
+  }
+  auto id = Unmarshal<i64>{}(std::span<const std::byte, sizeof(i64)>{
+      data.data() + p, data.data() + p + sizeof(i64)});
+  p += sizeof(i64);
+
   if (p + sizeof(i32) > data.size()) {
     return {0, {}};
   }
@@ -186,6 +207,7 @@ Unmarshal<dfis::SeatAvailabilityMonitoringResponse>::operator()(
   p += sizeof(i64);
 
   return {p, dfis::SeatAvailabilityMonitoringResponse{
+                 .id = id,
                  .status_code = status_code,
                  .message = message,
                  .identifier = identifier,
@@ -202,6 +224,9 @@ Marshal<dfis::SeatAvailabilityCallbackRequest>::operator()(
       static_cast<i32>(dfis::SeatAvailabilityCallbackRequest::kMessageType),
       std::span<std::byte, sizeof(i32)>{data.data(),
                                         data.data() + sizeof(i32)});
+
+  auto id = Marshal<i64>{}(request.id);
+  data.insert(data.end(), id.begin(), id.end());
 
   auto identifier = Marshal<i32>{}(request.identifier);
   data.insert(data.end(), identifier.begin(), identifier.end());
@@ -229,6 +254,13 @@ Unmarshal<dfis::SeatAvailabilityCallbackRequest>::operator()(
 
   i64 p = sizeof(i32);
 
+  if (p + sizeof(i64) > data.size()) {
+    return {0, {}};
+  }
+  auto id = Unmarshal<i64>{}(std::span<const std::byte, sizeof(i64)>{
+      data.data() + p, data.data() + p + sizeof(i64)});
+  p += sizeof(i64);
+
   if (p + sizeof(i32) > data.size()) {
     return {0, {}};
   }
@@ -245,6 +277,7 @@ Unmarshal<dfis::SeatAvailabilityCallbackRequest>::operator()(
   p += sizeof(i32);
 
   return {p, dfis::SeatAvailabilityCallbackRequest{
+                 .id = id,
                  .identifier = identifier,
                  .seat_availability = seat_availability,
              }};
@@ -259,6 +292,9 @@ Marshal<dfis::SeatAvailabilityCallbackResponse>::operator()(
       static_cast<i32>(dfis::SeatAvailabilityCallbackResponse::kMessageType),
       std::span<std::byte, sizeof(i32)>{data.data(),
                                         data.data() + sizeof(i32)});
+
+  auto id = Marshal<i64>{}(response.id);
+  data.insert(data.end(), id.begin(), id.end());
 
   auto status_code = Marshal<i32>{}(response.status_code);
   data.insert(data.end(), status_code.begin(), status_code.end());
@@ -283,6 +319,13 @@ Unmarshal<dfis::SeatAvailabilityCallbackResponse>::operator()(
 
   i64 p = sizeof(i32);
 
+  if (p + sizeof(i64) > data.size()) {
+    return {0, {}};
+  }
+  auto id = Unmarshal<i64>{}(std::span<const std::byte, sizeof(i64)>{
+      data.data() + p, data.data() + p + sizeof(i64)});
+  p += sizeof(i64);
+
   if (p + sizeof(i32) > data.size()) {
     return {0, {}};
   }
@@ -291,6 +334,7 @@ Unmarshal<dfis::SeatAvailabilityCallbackResponse>::operator()(
   p += sizeof(i32);
 
   return {p, dfis::SeatAvailabilityCallbackResponse{
+                 .id = id,
                  .status_code = status_code,
              }};
 }

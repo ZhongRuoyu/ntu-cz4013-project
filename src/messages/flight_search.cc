@@ -48,6 +48,9 @@ Marshal<dfis::FlightSearchRequest>::operator()(
                  std::span<std::byte, sizeof(i32)>{data.data(),
                                                    data.data() + sizeof(i32)});
 
+  auto id = Marshal<i64>{}(request.id);
+  data.insert(data.end(), id.begin(), id.end());
+
   auto source = Marshal<std::string>{}(request.source);
   data.insert(data.end(), source.begin(), source.end());
 
@@ -73,6 +76,13 @@ Unmarshal<dfis::FlightSearchRequest>::operator()(
 
   i64 p = sizeof(i32);
 
+  if (p + sizeof(i64) > data.size()) {
+    return {0, {}};
+  }
+  auto id = Unmarshal<i64>{}(std::span<const std::byte, sizeof(i64)>{
+      data.data() + p, data.data() + p + sizeof(i64)});
+  p += sizeof(i64);
+
   auto source_res = Unmarshal<std::string>{}(
       std::span<const std::byte>{data.data() + p, data.data() + data.size()});
   if (!source_res.second.has_value()) {
@@ -90,6 +100,7 @@ Unmarshal<dfis::FlightSearchRequest>::operator()(
   p += destination_res.first;
 
   return {p, dfis::FlightSearchRequest{
+                 .id = id,
                  .source = source,
                  .destination = destination,
              }};
@@ -103,6 +114,9 @@ Marshal<dfis::FlightSearchResponse>::operator()(
   Marshal<i32>{}(static_cast<i32>(dfis::FlightSearchResponse::kMessageType),
                  std::span<std::byte, sizeof(i32)>{data.data(),
                                                    data.data() + sizeof(i32)});
+
+  auto id = Marshal<i64>{}(response.id);
+  data.insert(data.end(), id.begin(), id.end());
 
   auto status_code = Marshal<i32>{}(response.status_code);
   data.insert(data.end(), status_code.begin(), status_code.end());
@@ -132,6 +146,13 @@ Unmarshal<dfis::FlightSearchResponse>::operator()(
 
   i64 p = sizeof(i32);
 
+  if (p + sizeof(i64) > data.size()) {
+    return {0, {}};
+  }
+  auto id = Unmarshal<i64>{}(std::span<const std::byte, sizeof(i64)>{
+      data.data() + p, data.data() + p + sizeof(i64)});
+  p += sizeof(i64);
+
   if (p + sizeof(i32) > data.size()) {
     return {0, {}};
   }
@@ -156,6 +177,7 @@ Unmarshal<dfis::FlightSearchResponse>::operator()(
   p += flights_res.first;
 
   return {p, dfis::FlightSearchResponse{
+                 .id = id,
                  .status_code = status_code,
                  .message = message,
                  .flights = flights,

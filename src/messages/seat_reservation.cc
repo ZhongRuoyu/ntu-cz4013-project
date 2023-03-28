@@ -46,6 +46,9 @@ Marshal<dfis::SeatReservationRequest>::operator()(
                  std::span<std::byte, sizeof(i32)>{data.data(),
                                                    data.data() + sizeof(i32)});
 
+  auto id = Marshal<i64>{}(request.id);
+  data.insert(data.end(), id.begin(), id.end());
+
   auto identifier = Marshal<i32>{}(request.identifier);
   data.insert(data.end(), identifier.begin(), identifier.end());
 
@@ -71,6 +74,13 @@ Unmarshal<dfis::SeatReservationRequest>::operator()(
 
   i64 p = sizeof(i32);
 
+  if (p + sizeof(i64) > data.size()) {
+    return {0, {}};
+  }
+  auto id = Unmarshal<i64>{}(std::span<const std::byte, sizeof(i64)>{
+      data.data() + p, data.data() + p + sizeof(i64)});
+  p += sizeof(i64);
+
   if (p + sizeof(i32) > data.size()) {
     return {0, {}};
   }
@@ -86,6 +96,7 @@ Unmarshal<dfis::SeatReservationRequest>::operator()(
   p += sizeof(i32);
 
   return {p, dfis::SeatReservationRequest{
+                 .id = id,
                  .identifier = identifier,
                  .seats = seats,
              }};
@@ -99,6 +110,9 @@ Marshal<dfis::SeatReservationResponse>::operator()(
   Marshal<i32>{}(static_cast<i32>(dfis::SeatReservationResponse::kMessageType),
                  std::span<std::byte, sizeof(i32)>{data.data(),
                                                    data.data() + sizeof(i32)});
+
+  auto id = Marshal<i64>{}(response.id);
+  data.insert(data.end(), id.begin(), id.end());
 
   auto status_code = Marshal<i32>{}(response.status_code);
   data.insert(data.end(), status_code.begin(), status_code.end());
@@ -131,6 +145,13 @@ Unmarshal<dfis::SeatReservationResponse>::operator()(
 
   i64 p = sizeof(i32);
 
+  if (p + sizeof(i64) > data.size()) {
+    return {0, {}};
+  }
+  auto id = Unmarshal<i64>{}(std::span<const std::byte, sizeof(i64)>{
+      data.data() + p, data.data() + p + sizeof(i64)});
+  p += sizeof(i64);
+
   if (p + sizeof(i32) > data.size()) {
     return {0, {}};
   }
@@ -161,6 +182,7 @@ Unmarshal<dfis::SeatReservationResponse>::operator()(
   p += sizeof(i32);
 
   return {p, dfis::SeatReservationResponse{
+                 .id = id,
                  .status_code = status_code,
                  .message = message,
                  .identifier = identifier,
