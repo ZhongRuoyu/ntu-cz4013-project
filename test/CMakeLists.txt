@@ -8,6 +8,7 @@ target_sources(dfis_tests PRIVATE
   messages/flight_search.cc
   messages/seat_availability.cc
   messages/seat_reservation.cc
+  utils/rand.cc
   utils/time.cc
 )
 target_link_libraries(dfis_tests PRIVATE

@@ -19,6 +19,7 @@ set(DFIS_CORE_SRCS
   src/messages/flight_search.cc
   src/messages/seat_availability.cc
   src/messages/seat_reservation.cc
+  src/utils/rand.cc
   src/utils/time.cc
 )
 add_library(dfis_core OBJECT ${DFIS_CORE_SRCS})
