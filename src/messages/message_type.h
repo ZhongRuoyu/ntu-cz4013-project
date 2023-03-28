@@ -1,5 +1,5 @@
-#ifndef DFIS_MESSAGE_MESSAGE_TYPE_H_
-#define DFIS_MESSAGE_MESSAGE_TYPE_H_
+#ifndef DFIS_MESSAGES_MESSAGE_TYPE_H_
+#define DFIS_MESSAGES_MESSAGE_TYPE_H_
 
 #include <srpc/types/integers.h>
 
@@ -20,4 +20,4 @@ enum class MessageType : srpc::i32 {
 
 }  // namespace dfis
 
-#endif  // DFIS_MESSAGE_MESSAGE_TYPE_H_
+#endif  // DFIS_MESSAGES_MESSAGE_TYPE_H_
