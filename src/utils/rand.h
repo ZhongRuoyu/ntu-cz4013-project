@@ -9,4 +9,4 @@ namespace dfis {
 
 }
 
-#endif // UTILS_RAND_H_
+#endif  // UTILS_RAND_H_
