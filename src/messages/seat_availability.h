@@ -1,5 +1,5 @@
-#ifndef DFIS_MESSAGES_FLIGHT_INFO_H_
-#define DFIS_MESSAGES_FLIGHT_INFO_H_
+#ifndef DFIS_MESSAGES_SEAT_AVAILABILITY_H_
+#define DFIS_MESSAGES_SEAT_AVAILABILITY_H_
 
 #include <cstddef>
 #include <optional>
@@ -115,4 +115,4 @@ struct Unmarshal<dfis::SeatAvailabilityCallbackResponse> {
 
 }  // namespace srpc
 
-#endif  // DFIS_MESSAGES_FLIGHT_INFO_H_
+#endif  // DFIS_MESSAGES_SEAT_AVAILABILITY_H_
