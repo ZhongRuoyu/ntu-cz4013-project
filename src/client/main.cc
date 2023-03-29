@@ -28,15 +28,16 @@
 
 using namespace dfis;
 
-[[noreturn]] static void Bye() {
+namespace {
+
+[[noreturn]] void Bye() {
   std::cout << "Bye-bye!" << std::endl;
   // NOLINTNEXTLINE(concurrency-mt-unsafe)
   std::exit(EXIT_SUCCESS);
 }
 
 template <typename T>
-static T PromptForInput(const std::string &prompt,
-                        const std::string &retry_prompt) {
+T PromptForInput(const std::string &prompt, const std::string &retry_prompt) {
   std::cout << prompt << std::flush;
   for (;;) {
     std::string line;
@@ -52,8 +53,8 @@ static T PromptForInput(const std::string &prompt,
   }
 }
 
-static std::ostream &operator<<(std::ostream &ostream,
-                                const srpc::SocketAddress &addr) {
+std::ostream &operator<<(std::ostream &ostream,
+                         const srpc::SocketAddress &addr) {
   switch (addr.protocol) {
     case srpc::kIPv4: return ostream << addr.address << ":" << addr.port;
     case srpc::kIPv6:
@@ -62,7 +63,7 @@ static std::ostream &operator<<(std::ostream &ostream,
   assert(false);
 }
 
-static void RandomDelay(srpc::i64 from_ms = 0, srpc::i64 to_ms = 200) {
+void RandomDelay(srpc::i64 from_ms = 0, srpc::i64 to_ms = 200) {
   static std::random_device rand;
   auto sleep_ms = std::chrono::milliseconds(
       std::uniform_int_distribution<std::chrono::milliseconds::rep>{
@@ -72,14 +73,14 @@ static void RandomDelay(srpc::i64 from_ms = 0, srpc::i64 to_ms = 200) {
   std::this_thread::sleep_for(sleep_ms);
 }
 
-static bool RandomLoss(srpc::f32 loss_prob = 0.1) {
+bool RandomLoss(srpc::f32 loss_prob = 0.1) {
   static std::random_device rand;
   return std::uniform_real_distribution<srpc::f32>{0.0, 1.0}(rand) < loss_prob;
 }
 
 template <typename Req, typename Res>
-static std::optional<Res> SendAndReceive(const std::string &server_addr,
-                                         srpc::u16 server_port, Req req) {
+std::optional<Res> SendAndReceive(const std::string &server_addr,
+                                  srpc::u16 server_port, Req req) {
   auto client_res = srpc::DatagramClient::New(server_addr, server_port);
   if (!client_res.OK()) {
     std::cerr << "Error: Unable to create client: " << client_res.Error()
@@ -123,7 +124,7 @@ static std::optional<Res> SendAndReceive(const std::string &server_addr,
   return resp;
 }
 
-static std::optional<std::vector<std::byte>> ServeSeatAvailabilityCallbacks(
+std::optional<std::vector<std::byte>> ServeSeatAvailabilityCallbacks(
     InvocationSemantic semantic, const srpc::SocketAddress &from_addr,
     srpc::Result<std::vector<std::byte>> req_data_res) {
   if (!req_data_res.OK()) {
@@ -189,6 +190,8 @@ static std::optional<std::vector<std::byte>> ServeSeatAvailabilityCallbacks(
             << std::endl;
   return srpc::Marshal<SeatAvailabilityCallbackResponse>{}(res);
 }
+
+}  // namespace
 
 int main(int argc, char **argv) {
   if (argc != 4) {

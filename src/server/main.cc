@@ -32,7 +32,9 @@
 
 using namespace dfis;
 
-static std::unordered_map<srpc::i32, Flight> ReadFlightsFromFile(
+namespace {
+
+std::unordered_map<srpc::i32, Flight> ReadFlightsFromFile(
     const std::string &filename) {
   std::unordered_map<srpc::i32, Flight> flights;
   std::ifstream in{filename};
@@ -55,8 +57,8 @@ static std::unordered_map<srpc::i32, Flight> ReadFlightsFromFile(
   return flights;
 }
 
-static std::ostream &operator<<(std::ostream &ostream,
-                                const srpc::SocketAddress &addr) {
+std::ostream &operator<<(std::ostream &ostream,
+                         const srpc::SocketAddress &addr) {
   switch (addr.protocol) {
     case srpc::kIPv4: return ostream << addr.address << ":" << addr.port;
     case srpc::kIPv6:
@@ -65,7 +67,7 @@ static std::ostream &operator<<(std::ostream &ostream,
   assert(false);
 }
 
-static void RandomDelay(srpc::i64 from_ms = 0, srpc::i64 to_ms = 200) {
+void RandomDelay(srpc::i64 from_ms = 0, srpc::i64 to_ms = 200) {
   static std::random_device rand;
   auto sleep_ms = std::chrono::milliseconds(
       std::uniform_int_distribution<std::chrono::milliseconds::rep>{
@@ -75,13 +77,13 @@ static void RandomDelay(srpc::i64 from_ms = 0, srpc::i64 to_ms = 200) {
   std::this_thread::sleep_for(sleep_ms);
 }
 
-static bool RandomLoss(srpc::f32 loss_prob = 0.1) {
+bool RandomLoss(srpc::f32 loss_prob = 0.1) {
   static std::random_device rand;
   return std::uniform_real_distribution<srpc::f32>{0.0, 1.0}(rand) < loss_prob;
 }
 
-static void SendSeatAvailabilityCallbackRequest(
-    const srpc::SocketAddress &to_addr, SeatAvailabilityCallbackRequest req) {
+void SendSeatAvailabilityCallbackRequest(const srpc::SocketAddress &to_addr,
+                                         SeatAvailabilityCallbackRequest req) {
   auto client_res = srpc::DatagramClient::New(to_addr.address, to_addr.port);
   if (!client_res.OK()) {
     std::cerr
@@ -140,7 +142,7 @@ static void SendSeatAvailabilityCallbackRequest(
       << to_addr << std::endl;
 }
 
-static std::optional<std::vector<std::byte>> Serve(
+std::optional<std::vector<std::byte>> Serve(
     InvocationSemantic semantic, std::unordered_map<srpc::i32, Flight> &flights,
     const srpc::SocketAddress &from_addr,
     srpc::Result<std::vector<std::byte>> req_data_res) {
@@ -482,6 +484,8 @@ static std::optional<std::vector<std::byte>> Serve(
             << from_addr << std::endl;
   return {};
 }
+
+}  // namespace
 
 int main(int argc, char **argv) {
   if (argc != 4) {
