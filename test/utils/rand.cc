@@ -9,7 +9,7 @@
 using namespace dfis;
 
 TEST(Utils, MakeMessageIdentifier) {
-  std::set<srpc::i64> identifiers;
+  std::set<srpc::u64> identifiers;
   for (int i = 0; i < 100'000; ++i) {
     auto id = MakeMessageIdentifier();
     ASSERT_FALSE(identifiers.contains(id));

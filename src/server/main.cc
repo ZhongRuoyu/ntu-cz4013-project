@@ -123,7 +123,7 @@ static std::vector<std::byte> Serve(
     auto req_res = srpc::Unmarshal<FlightSearchRequest>{}(req_data);
     if (req_res.second.has_value()) {
       static std::unordered_map<
-          srpc::i64, std::pair<FlightSearchRequest, FlightSearchResponse>>
+          srpc::u64, std::pair<FlightSearchRequest, FlightSearchResponse>>
           history;
 
       auto req = std::move(*req_res.second);
@@ -171,7 +171,7 @@ static std::vector<std::byte> Serve(
     auto req_res = srpc::Unmarshal<FlightInfoRequest>{}(req_data);
     if (req_res.second.has_value()) {
       static std::unordered_map<
-          srpc::i64, std::pair<FlightInfoRequest, FlightInfoResponse>>
+          srpc::u64, std::pair<FlightInfoRequest, FlightInfoResponse>>
           history;
 
       auto req = *req_res.second;
@@ -212,7 +212,7 @@ static std::vector<std::byte> Serve(
     auto req_res = srpc::Unmarshal<SeatReservationRequest>{}(req_data);
     if (req_res.second.has_value()) {
       static std::unordered_map<
-          srpc::i64, std::pair<SeatReservationRequest, SeatReservationResponse>>
+          srpc::u64, std::pair<SeatReservationRequest, SeatReservationResponse>>
           history;
 
       auto req = *req_res.second;
@@ -286,7 +286,7 @@ static std::vector<std::byte> Serve(
     auto req_res =
         srpc::Unmarshal<SeatAvailabilityMonitoringRequest>{}(req_data);
     if (req_res.second.has_value()) {
-      static std::unordered_map<srpc::i64,
+      static std::unordered_map<srpc::u64,
                                 std::pair<SeatAvailabilityMonitoringRequest,
                                           SeatAvailabilityMonitoringResponse>>
           history;

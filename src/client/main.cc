@@ -188,7 +188,7 @@ Enter selection: )SEL"
               }
 
               static std::unordered_map<
-                  srpc::i64, std::pair<SeatAvailabilityCallbackRequest,
+                  srpc::u64, std::pair<SeatAvailabilityCallbackRequest,
                                        SeatAvailabilityCallbackResponse>>
                   history;
 

@@ -19,7 +19,7 @@ namespace dfis {
 
 struct FlightSearchRequest {
   static constexpr MessageType kMessageType = MessageType::kFlightSearchRequest;
-  srpc::i64 id;
+  srpc::u64 id;
   std::string source;
   std::string destination;
 };
@@ -29,7 +29,7 @@ std::ostream &operator<<(std::ostream &os, const FlightSearchRequest &request);
 struct FlightSearchResponse {
   static constexpr MessageType kMessageType =
       MessageType::kFlightSearchResponse;
-  srpc::i64 id;
+  srpc::u64 id;
   srpc::i32 status_code;
   std::string message;
   std::vector<dfis::Flight> flights;

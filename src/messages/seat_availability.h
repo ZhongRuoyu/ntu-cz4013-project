@@ -19,7 +19,7 @@ namespace dfis {
 struct SeatAvailabilityMonitoringRequest {
   static constexpr MessageType kMessageType =
       MessageType::kSeatAvailabilityMonitoringRequest;
-  srpc::i64 id;
+  srpc::u64 id;
   srpc::i32 identifier;
   srpc::u16 port;
   srpc::i32 monitor_interval_sec;
@@ -31,7 +31,7 @@ std::ostream &operator<<(std::ostream &os,
 struct SeatAvailabilityMonitoringResponse {
   static constexpr MessageType kMessageType =
       MessageType::kSeatAvailabilityMonitoringResponse;
-  srpc::i64 id;
+  srpc::u64 id;
   srpc::i32 status_code;
   std::string message;
   srpc::i32 identifier;
@@ -44,7 +44,7 @@ std::ostream &operator<<(std::ostream &os,
 struct SeatAvailabilityCallbackRequest {
   static constexpr MessageType kMessageType =
       MessageType::kSeatAvailabilityCallbackRequest;
-  srpc::i64 id;
+  srpc::u64 id;
   srpc::i32 identifier;
   srpc::i32 seat_availability;
 };
@@ -55,7 +55,7 @@ std::ostream &operator<<(std::ostream &os,
 struct SeatAvailabilityCallbackResponse {
   static constexpr MessageType kMessageType =
       MessageType::kSeatAvailabilityCallbackResponse;
-  srpc::i64 id;
+  srpc::u64 id;
   srpc::i32 status_code;
 };
 

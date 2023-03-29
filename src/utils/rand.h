@@ -5,7 +5,7 @@
 
 namespace dfis {
 
-[[nodiscard]] srpc::i64 MakeMessageIdentifier();
+[[nodiscard]] srpc::u64 MakeMessageIdentifier();
 
 }
 
