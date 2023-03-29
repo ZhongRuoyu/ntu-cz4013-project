@@ -3,7 +3,9 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <ostream>
+#include <random>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -14,6 +16,7 @@
 #include <srpc/network/datagram_client.h>
 #include <srpc/network/datagram_server.h>
 #include <srpc/network/tcp_ip.h>
+#include <srpc/types/floats.h>
 #include <srpc/types/integers.h>
 #include <srpc/types/serialization.h>
 #include <srpc/utils/result.h>
@@ -62,9 +65,23 @@ static std::ostream &operator<<(std::ostream &ostream,
   assert(false);
 }
 
+static void RandomDelay(srpc::i64 from_ms = 0, srpc::i64 to_ms = 200) {
+  static std::random_device rand;
+  auto sleep_ms = std::chrono::milliseconds(
+      std::uniform_int_distribution<std::chrono::milliseconds::rep>{
+          from_ms, to_ms}(rand));
+  std::clog << "Info: Simulating delay for " << sleep_ms.count() << "ms"
+            << std::endl;
+  std::this_thread::sleep_for(sleep_ms);
+}
+
+static bool RandomLoss(srpc::f32 loss_prob = 0.1) {
+  static std::random_device rand;
+  return std::uniform_real_distribution<srpc::f32>{0.0, 1.0}(rand) < loss_prob;
+}
+
 static void SendSeatAvailabilityCallbackRequest(
-    const srpc::SocketAddress &to_addr,
-    const SeatAvailabilityCallbackRequest &req) {
+    const srpc::SocketAddress &to_addr, SeatAvailabilityCallbackRequest req) {
   auto client_res = srpc::DatagramClient::New(to_addr.address, to_addr.port);
   if (!client_res.OK()) {
     std::cerr
@@ -74,19 +91,33 @@ static void SendSeatAvailabilityCallbackRequest(
   }
 
   auto client = std::move(client_res.Value());
-  auto resp_bytes_res = client->SendAndReceive(
-      srpc::Marshal<SeatAvailabilityCallbackRequest>{}(req));
-  if (!resp_bytes_res.OK()) {
+  req.id = MakeMessageIdentifier();
+
+  std::vector<std::byte> resp_bytes;
+  constexpr int retry_times = 3;
+  int attempt = 0;
+  while (attempt <= retry_times) {
+    auto resp_bytes_res = client->SendAndReceive(
+        srpc::Marshal<SeatAvailabilityCallbackRequest>{}(req));
+    if (!resp_bytes_res.OK()) {
+      std::clog << "Error: Unable to receive response for seat availability "
+                   "callback to "
+                << to_addr << ": " << resp_bytes_res.Error() << std::endl;
+      if (++attempt <= retry_times) {
+        std::clog << "Info: Retrying; attempt " << attempt << std::endl;
+      }
+      continue;
+    }
+    resp_bytes = std::move(resp_bytes_res.Value());
+    break;
+  }
+  if (attempt > retry_times) {
     std::cerr << "Error: Unable to receive response for seat availability "
                  "callback to "
-              << to_addr << ": " << resp_bytes_res.Error() << std::endl;
+              << to_addr << " after " << retry_times << " retries" << std::endl;
     return;
   }
-  if (!resp_bytes_res.Error().empty()) {
-    std::cerr << "Info: " << resp_bytes_res.Error() << std::endl;
-  }
 
-  auto resp_bytes = std::move(resp_bytes_res.Value());
   auto resp_res =
       srpc::Unmarshal<SeatAvailabilityCallbackResponse>{}(resp_bytes);
   if (!resp_res.second.has_value()) {
@@ -109,15 +140,23 @@ static void SendSeatAvailabilityCallbackRequest(
       << to_addr << std::endl;
 }
 
-static std::vector<std::byte> Serve(
-    InvocationSemantic semantic, std::unordered_map<srpc::i32, Flight> flights,
-    const srpc::SocketAddress &from_addr, std::vector<std::byte> req_data) {
+static std::optional<std::vector<std::byte>> Serve(
+    InvocationSemantic semantic, std::unordered_map<srpc::i32, Flight> &flights,
+    const srpc::SocketAddress &from_addr,
+    srpc::Result<std::vector<std::byte>> req_data_res) {
   struct Callback {
     srpc::SocketAddress to_addr;
     std::chrono::system_clock::time_point monitor_end;
   };
 
   static std::unordered_map<srpc::i32, std::vector<Callback>> callbacks;
+
+  if (!req_data_res.OK()) {
+    std::cerr << "Error: Could not receive request from " << from_addr << ": "
+              << req_data_res.Error() << std::endl;
+    return {};
+  }
+  auto req_data = std::move(req_data_res.Value());
 
   {
     auto req_res = srpc::Unmarshal<FlightSearchRequest>{}(req_data);
@@ -129,12 +168,24 @@ static std::vector<std::byte> Serve(
       auto req = std::move(*req_res.second);
       std::clog << "Info: Received flight search request from " << from_addr
                 << ": " << req << std::endl;
+      if (RandomLoss()) {
+        std::clog << "Info: Request " << req.id << " is simulated to be lost"
+                  << std::endl;
+        return {};
+      }
+      RandomDelay();
 
       if (semantic == InvocationSemantic::kAtMostOnce &&
           history.contains(req.id)) {
-        std::clog << "Info: " << req.id << " is a duplicate request."
+        std::clog << "Info: " << req.id << " is a duplicate request"
                   << std::endl;
         auto res = history[req.id].second;
+        if (RandomLoss()) {
+          std::clog << "Info: Response " << res.id << " is simulated to be lost"
+                    << std::endl;
+          return {};
+        }
+        RandomDelay();
         std::clog << "Info: Returning saved response " << res << std::endl;
         return srpc::Marshal<FlightSearchResponse>{}(res);
       }
@@ -158,11 +209,19 @@ static std::vector<std::byte> Serve(
         res.message = {};
         res.flights = std::move(results);
       }
-      std::clog << "Info: Sending flight search response to " << from_addr
-                << ": " << res << std::endl;
       if (semantic == InvocationSemantic::kAtMostOnce) {
         history[req.id] = {req, res};
       }
+
+      if (RandomLoss()) {
+        std::clog << "Info: Response " << res.id << " is simulated to be lost"
+                  << std::endl;
+        return {};
+      }
+      RandomDelay();
+
+      std::clog << "Info: Sending flight search response to " << from_addr
+                << ": " << res << std::endl;
       return srpc::Marshal<FlightSearchResponse>{}(res);
     }
   }
@@ -177,12 +236,24 @@ static std::vector<std::byte> Serve(
       auto req = *req_res.second;
       std::clog << "Info: Received flight info request from " << from_addr
                 << ": " << req << std::endl;
+      if (RandomLoss()) {
+        std::clog << "Info: Request " << req.id << " is simulated to be lost"
+                  << std::endl;
+        return {};
+      }
+      RandomDelay();
 
       if (semantic == InvocationSemantic::kAtMostOnce &&
           history.contains(req.id)) {
-        std::clog << "Info: " << req.id << " is a duplicate request."
+        std::clog << "Info: " << req.id << " is a duplicate request"
                   << std::endl;
         auto res = history[req.id].second;
+        if (RandomLoss()) {
+          std::clog << "Info: Response " << res.id << " is simulated to be lost"
+                    << std::endl;
+          return {};
+        }
+        RandomDelay();
         std::clog << "Info: Returning saved response " << res << std::endl;
         return srpc::Marshal<FlightInfoResponse>{}(res);
       }
@@ -199,11 +270,19 @@ static std::vector<std::byte> Serve(
         res.message = {};
         res.flight = {flights[req.identifier]};
       }
-      std::clog << "Info: Sending flight info response to " << from_addr << ": "
-                << res << std::endl;
       if (semantic == InvocationSemantic::kAtMostOnce) {
         history[req.id] = {req, res};
       }
+
+      if (RandomLoss()) {
+        std::clog << "Info: Response " << res.id << " is simulated to be lost"
+                  << std::endl;
+        return {};
+      }
+      RandomDelay();
+
+      std::clog << "Info: Sending flight info response to " << from_addr << ": "
+                << res << std::endl;
       return srpc::Marshal<FlightInfoResponse>{}(res);
     }
   }
@@ -218,12 +297,24 @@ static std::vector<std::byte> Serve(
       auto req = *req_res.second;
       std::clog << "Info: Received seat reservation request from " << from_addr
                 << ": " << req << std::endl;
+      if (RandomLoss()) {
+        std::clog << "Info: Request " << req.id << " is simulated to be lost"
+                  << std::endl;
+        return {};
+      }
+      RandomDelay();
 
       if (semantic == InvocationSemantic::kAtMostOnce &&
           history.contains(req.id)) {
-        std::clog << "Info: " << req.id << " is a duplicate request."
+        std::clog << "Info: " << req.id << " is a duplicate request"
                   << std::endl;
         auto res = history[req.id].second;
+        if (RandomLoss()) {
+          std::clog << "Info: Response " << res.id << " is simulated to be lost"
+                    << std::endl;
+          return {};
+        }
+        RandomDelay();
         std::clog << "Info: Returning saved response " << res << std::endl;
         return srpc::Marshal<SeatReservationResponse>{}(res);
       }
@@ -247,6 +338,8 @@ static std::vector<std::byte> Serve(
         } else {
           res.id = req.id;
           flight.seat_availability -= req.seats;
+          std::clog << "Info: Flight " << flight.identifier << " now has "
+                    << flight.seat_availability << " seat(s) left" << std::endl;
           res.status_code = 0;
           res.message = {};
           res.identifier = req.identifier;
@@ -255,7 +348,6 @@ static std::vector<std::byte> Serve(
         // Note: for simplicity, expired callbacks are not handled.
         auto now = std::chrono::system_clock::now();
         SeatAvailabilityCallbackRequest cb_req{
-            .id = MakeMessageIdentifier(),
             .identifier = flight.identifier,
             .seat_availability = flight.seat_availability,
         };
@@ -272,12 +364,19 @@ static std::vector<std::byte> Serve(
           }
         }
       }
-
-      std::clog << "Info: Sending flight info response to " << from_addr << ": "
-                << res << std::endl;
       if (semantic == InvocationSemantic::kAtMostOnce) {
         history[req.id] = {req, res};
       }
+
+      if (RandomLoss()) {
+        std::clog << "Info: Response " << res.id << " is simulated to be lost"
+                  << std::endl;
+        return {};
+      }
+      RandomDelay();
+
+      std::clog << "Info: Sending flight info response to " << from_addr << ": "
+                << res << std::endl;
       return srpc::Marshal<SeatReservationResponse>{}(res);
     }
   }
@@ -294,12 +393,24 @@ static std::vector<std::byte> Serve(
       auto req = *req_res.second;
       std::clog << "Info: Received seat availability monitoring request from "
                 << from_addr << ": " << req << std::endl;
+      if (RandomLoss()) {
+        std::clog << "Info: Request " << req.id << " is simulated to be lost"
+                  << std::endl;
+        return {};
+      }
+      RandomDelay();
 
       if (semantic == InvocationSemantic::kAtMostOnce &&
           history.contains(req.id)) {
-        std::clog << "Info: " << req.id << " is a duplicate request."
+        std::clog << "Info: " << req.id << " is a duplicate request"
                   << std::endl;
         auto res = history[req.id].second;
+        if (RandomLoss()) {
+          std::clog << "Info: Response " << res.id << " is simulated to be lost"
+                    << std::endl;
+          return {};
+        }
+        RandomDelay();
         std::clog << "Info: Returning saved response " << res << std::endl;
         return srpc::Marshal<SeatAvailabilityMonitoringResponse>{}(res);
       }
@@ -338,12 +449,19 @@ static std::vector<std::byte> Serve(
         res.identifier = req.identifier;
         res.monitor_end = monitor_end_ts;
       }
-
-      std::clog << "Info: Sending seat availability monitoring response to "
-                << from_addr << ": " << res << std::endl;
       if (semantic == InvocationSemantic::kAtMostOnce) {
         history[req.id] = {req, res};
       }
+
+      if (RandomLoss()) {
+        std::clog << "Info: Response " << res.id << " is simulated to be lost"
+                  << std::endl;
+        return {};
+      }
+      RandomDelay();
+
+      std::clog << "Info: Sending seat availability monitoring response to "
+                << from_addr << ": " << res << std::endl;
       return srpc::Marshal<SeatAvailabilityMonitoringResponse>{}(res);
     }
   }
@@ -367,8 +485,10 @@ int main(int argc, char **argv) {
   std::string flights_input = argv[3];
   if (std::strcmp(argv[1], "at-least-once") == 0) {
     semantic = InvocationSemantic::kAtLeastOnce;
+    std::clog << "Info: At-least-once semantic is used" << std::endl;
   } else if (std::strcmp(argv[1], "at-most-once") == 0) {
     semantic = InvocationSemantic::kAtMostOnce;
+    std::clog << "Info: At-most-once semantic is used" << std::endl;
   } else {
     std::cerr << "Error: Invalid invocation semantic: " << argv[1] << std::endl;
     // NOLINTNEXTLINE(concurrency-mt-unsafe)

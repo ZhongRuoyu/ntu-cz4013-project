@@ -4,6 +4,7 @@
 #include <iostream>
 #include <optional>
 #include <ostream>
+#include <random>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -13,6 +14,7 @@
 #include <srpc/network/datagram_client.h>
 #include <srpc/network/datagram_server.h>
 #include <srpc/network/tcp_ip.h>
+#include <srpc/types/floats.h>
 #include <srpc/types/integers.h>
 #include <srpc/types/serialization.h>
 
@@ -21,6 +23,7 @@
 #include "messages/invocation_semantic.h"
 #include "messages/seat_availability.h"
 #include "messages/seat_reservation.h"
+#include "srpc/utils/result.h"
 #include "utils/rand.h"
 
 using namespace dfis;
@@ -49,6 +52,31 @@ static T PromptForInput(const std::string &prompt,
   }
 }
 
+static std::ostream &operator<<(std::ostream &ostream,
+                                const srpc::SocketAddress &addr) {
+  switch (addr.protocol) {
+    case srpc::kIPv4: return ostream << addr.address << ":" << addr.port;
+    case srpc::kIPv6:
+      return ostream << "[" << addr.address << "]:" << addr.port;
+  }
+  assert(false);
+}
+
+static void RandomDelay(srpc::i64 from_ms = 0, srpc::i64 to_ms = 200) {
+  static std::random_device rand;
+  auto sleep_ms = std::chrono::milliseconds(
+      std::uniform_int_distribution<std::chrono::milliseconds::rep>{
+          from_ms, to_ms}(rand));
+  std::clog << "Info: Simulating delay for " << sleep_ms.count() << "ms"
+            << std::endl;
+  std::this_thread::sleep_for(sleep_ms);
+}
+
+static bool RandomLoss(srpc::f32 loss_prob = 0.1) {
+  static std::random_device rand;
+  return std::uniform_real_distribution<srpc::f32>{0.0, 1.0}(rand) < loss_prob;
+}
+
 template <typename Req, typename Res>
 static std::optional<Res> SendAndReceive(const std::string &server_addr,
                                          srpc::u16 server_port, Req req) {
@@ -61,17 +89,29 @@ static std::optional<Res> SendAndReceive(const std::string &server_addr,
 
   auto client = std::move(client_res.Value());
   req.id = MakeMessageIdentifier();
-  auto resp_bytes_res = client->SendAndReceive(srpc::Marshal<Req>{}(req));
-  if (!resp_bytes_res.OK()) {
-    std::cerr << "Error: Unable to receive response: " << resp_bytes_res.Error()
-              << std::endl;
+
+  std::vector<std::byte> resp_bytes;
+  constexpr int retry_times = 3;
+  int attempt = 0;
+  while (attempt <= retry_times) {
+    auto resp_bytes_res = client->SendAndReceive(srpc::Marshal<Req>{}(req));
+    if (!resp_bytes_res.OK()) {
+      std::clog << "Info: Unable to receive response: "
+                << resp_bytes_res.Error() << std::endl;
+      if (++attempt <= retry_times) {
+        std::clog << "Info: Retrying; attempt " << attempt << std::endl;
+      }
+      continue;
+    }
+    resp_bytes = std::move(resp_bytes_res.Value());
+    break;
+  }
+  if (attempt > retry_times) {
+    std::cerr << "Error: Unable to receive response after " << retry_times
+              << " retries" << std::endl;
     return {};
   }
-  if (!resp_bytes_res.Error().empty()) {
-    std::cerr << "Info: " << resp_bytes_res.Error() << std::endl;
-  }
 
-  auto resp_bytes = std::move(resp_bytes_res.Value());
   auto resp_res = srpc::Unmarshal<Res>{}(resp_bytes);
   if (!resp_res.second.has_value()) {
     std::cerr << "Error: Failed to unmarshal response" << std::endl;
@@ -81,6 +121,70 @@ static std::optional<Res> SendAndReceive(const std::string &server_addr,
   auto resp = std::move(*resp_res.second);
   std::cout << "Received response:\n" << resp << std::endl;
   return resp;
+}
+
+static std::optional<std::vector<std::byte>> ServeSeatAvailabilityCallbacks(
+    InvocationSemantic semantic, const srpc::SocketAddress &from_addr,
+    srpc::Result<std::vector<std::byte>> req_data_res) {
+  if (!req_data_res.OK()) {
+    std::cerr << "Error: Could not receive seat availability callback from "
+              << from_addr << ": " << req_data_res.Error() << std::endl;
+    return {};
+  }
+
+  auto req_data = std::move(req_data_res.Value());
+  auto req_res = srpc::Unmarshal<SeatAvailabilityCallbackRequest>{}(req_data);
+  if (!req_res.second.has_value()) {
+    std::cerr << "Error: Could not unmarshal seat availability callback"
+              << std::endl;
+    return {};
+  }
+
+  static std::unordered_map<srpc::u64,
+                            std::pair<SeatAvailabilityCallbackRequest,
+                                      SeatAvailabilityCallbackResponse>>
+      history;
+
+  auto req = *req_res.second;
+  std::cout << "Received seat availability callback: " << req << std::endl;
+  if (RandomLoss()) {
+    std::clog << "Info: Callback request " << req.id
+              << " is simulated to be lost" << std::endl;
+    return {};
+  }
+  RandomDelay();
+
+  if (semantic == InvocationSemantic::kAtMostOnce && history.contains(req.id)) {
+    std::clog << "Info: " << req.id << " is a duplicate request" << std::endl;
+    auto res = history[req.id].second;
+    if (RandomLoss()) {
+      std::clog << "Info: Callback response " << res.id
+                << " is simulated to be lost" << std::endl;
+      return {};
+    }
+    RandomDelay();
+    std::clog << "Info: Returning saved response " << res << std::endl;
+    return srpc::Marshal<SeatAvailabilityCallbackResponse>{}(res);
+  }
+
+  SeatAvailabilityCallbackResponse res{
+      .id = req.id,
+      .status_code = 0,
+  };
+  if (semantic == InvocationSemantic::kAtMostOnce) {
+    history[req.id] = {req, res};
+  }
+
+  if (RandomLoss()) {
+    std::clog << "Info: Callback response " << res.id
+              << " is simulated to be lost" << std::endl;
+    return {};
+  }
+  RandomDelay();
+
+  std::clog << "Info: Sending callback response to " << from_addr << ": " << res
+            << std::endl;
+  return srpc::Marshal<SeatAvailabilityCallbackResponse>{}(res);
 }
 
 int main(int argc, char **argv) {
@@ -97,8 +201,10 @@ int main(int argc, char **argv) {
   auto server_port = static_cast<srpc::u16>(std::atoi(argv[3]));
   if (std::strcmp(argv[1], "at-least-once") == 0) {
     semantic = InvocationSemantic::kAtLeastOnce;
+    std::clog << "Info: At-least-once semantic is used" << std::endl;
   } else if (std::strcmp(argv[1], "at-most-once") == 0) {
     semantic = InvocationSemantic::kAtMostOnce;
+    std::clog << "Info: At-most-once semantic is used" << std::endl;
   } else {
     std::cerr << "Error: Invalid invocation semantic: " << argv[1] << std::endl;
     // NOLINTNEXTLINE(concurrency-mt-unsafe)
@@ -173,50 +279,14 @@ Enter selection: )SEL"
         continue;
       }
       auto server = std::move(server_res.Value());
-      std::thread{
-          [semantic](auto server) {
-            server->Listen([semantic](const srpc::SocketAddress &from_addr,
-                                      std::vector<std::byte> req_data)
-                               -> std::optional<std::vector<std::byte>> {
-              auto req_res =
-                  srpc::Unmarshal<SeatAvailabilityCallbackRequest>{}(req_data);
-              if (!req_res.second.has_value()) {
-                std::cerr
-                    << "Error: Could not unmarshal seat availability callback"
-                    << std::endl;
-                return {};
-              }
-
-              static std::unordered_map<
-                  srpc::u64, std::pair<SeatAvailabilityCallbackRequest,
-                                       SeatAvailabilityCallbackResponse>>
-                  history;
-
-              auto req = *req_res.second;
-              std::cout << "Received seat availability callback: " << req
-                        << std::endl;
-
-              if (semantic == InvocationSemantic::kAtMostOnce &&
-                  history.contains(req.id)) {
-                std::clog << "Info: " << req.id << " is a duplicate request."
-                          << std::endl;
-                auto res = history[req.id].second;
-                std::clog << "Info: Returning saved response " << res
-                          << std::endl;
-                return srpc::Marshal<SeatAvailabilityCallbackResponse>{}(res);
-              }
-
-              SeatAvailabilityCallbackResponse res{
-                  .id = req.id,
-                  .status_code = 0,
-              };
-              if (semantic == InvocationSemantic::kAtMostOnce) {
-                history[req.id] = {req, res};
-              }
-              return srpc::Marshal<SeatAvailabilityCallbackResponse>{}(res);
-            });
-          },
-          std::move(server)}
+      std::thread{[semantic](auto server) {
+                    server->Listen(
+                        [semantic](const auto &from_addr, auto req_data_res) {
+                          return ServeSeatAvailabilityCallbacks(
+                              semantic, from_addr, req_data_res);
+                        });
+                  },
+                  std::move(server)}
           .detach();
       std::this_thread::sleep_until(
           std::chrono::system_clock::from_time_t(res->monitor_end));
