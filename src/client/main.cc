@@ -17,13 +17,13 @@
 #include <srpc/types/floats.h>
 #include <srpc/types/integers.h>
 #include <srpc/types/serialization.h>
+#include <srpc/utils/result.h>
 
 #include "messages/flight_info.h"
 #include "messages/flight_search.h"
 #include "messages/invocation_semantic.h"
 #include "messages/seat_availability.h"
 #include "messages/seat_reservation.h"
-#include "srpc/utils/result.h"
 #include "utils/rand.h"
 
 using namespace dfis;
