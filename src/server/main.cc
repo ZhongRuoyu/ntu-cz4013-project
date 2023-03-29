@@ -386,7 +386,8 @@ int main(int argc, char **argv) {
 
   auto server = std::move(server_res.Value());
   std::clog << "Info: Server listening at port " << port << std::endl;
-  server->Listen([semantic, flights](const auto &from_addr, auto req_data_res) {
-    return Serve(semantic, flights, from_addr, req_data_res);
-  });
+  server->Listen(
+      [semantic, &flights](const auto &from_addr, auto req_data_res) {
+        return Serve(semantic, flights, from_addr, req_data_res);
+      });
 }
