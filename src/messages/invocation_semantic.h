@@ -7,7 +7,7 @@ namespace dfis {
 
 enum class InvocationSemantic : srpc::i8 {
   kAtLeastOnce = 1,
-  kAtMostOnce = 1,
+  kAtMostOnce = 2,
 };
 
 }  // namespace dfis
