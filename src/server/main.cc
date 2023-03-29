@@ -168,7 +168,10 @@ static std::optional<std::vector<std::byte>> Serve(
       auto req = std::move(*req_res.second);
       std::clog << "Info: Received flight search request from " << from_addr
                 << ": " << req << std::endl;
-      if (RandomLoss()) {
+
+      auto req_lost = RandomLoss(0.1);
+      auto res_lost = RandomLoss(0.2);
+      if (req_lost) {
         std::clog << "Info: Request " << req.id << " is simulated to be lost"
                   << std::endl;
         return {};
@@ -180,7 +183,7 @@ static std::optional<std::vector<std::byte>> Serve(
         std::clog << "Info: " << req.id << " is a duplicate request"
                   << std::endl;
         auto res = history[req.id].second;
-        if (RandomLoss()) {
+        if (res_lost) {
           std::clog << "Info: Response " << res.id << " is simulated to be lost"
                     << std::endl;
           return {};
@@ -213,7 +216,7 @@ static std::optional<std::vector<std::byte>> Serve(
         history[req.id] = {req, res};
       }
 
-      if (RandomLoss()) {
+      if (res_lost) {
         std::clog << "Info: Response " << res.id << " is simulated to be lost"
                   << std::endl;
         return {};
@@ -236,7 +239,10 @@ static std::optional<std::vector<std::byte>> Serve(
       auto req = *req_res.second;
       std::clog << "Info: Received flight info request from " << from_addr
                 << ": " << req << std::endl;
-      if (RandomLoss()) {
+
+      auto req_lost = RandomLoss(0.1);
+      auto res_lost = RandomLoss(0.2);
+      if (req_lost) {
         std::clog << "Info: Request " << req.id << " is simulated to be lost"
                   << std::endl;
         return {};
@@ -248,7 +254,7 @@ static std::optional<std::vector<std::byte>> Serve(
         std::clog << "Info: " << req.id << " is a duplicate request"
                   << std::endl;
         auto res = history[req.id].second;
-        if (RandomLoss()) {
+        if (res_lost) {
           std::clog << "Info: Response " << res.id << " is simulated to be lost"
                     << std::endl;
           return {};
@@ -274,7 +280,7 @@ static std::optional<std::vector<std::byte>> Serve(
         history[req.id] = {req, res};
       }
 
-      if (RandomLoss()) {
+      if (res_lost) {
         std::clog << "Info: Response " << res.id << " is simulated to be lost"
                   << std::endl;
         return {};
@@ -297,7 +303,10 @@ static std::optional<std::vector<std::byte>> Serve(
       auto req = *req_res.second;
       std::clog << "Info: Received seat reservation request from " << from_addr
                 << ": " << req << std::endl;
-      if (RandomLoss()) {
+
+      auto req_lost = RandomLoss(0.1);
+      auto res_lost = RandomLoss(0.2);
+      if (req_lost) {
         std::clog << "Info: Request " << req.id << " is simulated to be lost"
                   << std::endl;
         return {};
@@ -309,7 +318,7 @@ static std::optional<std::vector<std::byte>> Serve(
         std::clog << "Info: " << req.id << " is a duplicate request"
                   << std::endl;
         auto res = history[req.id].second;
-        if (RandomLoss()) {
+        if (res_lost) {
           std::clog << "Info: Response " << res.id << " is simulated to be lost"
                     << std::endl;
           return {};
@@ -368,7 +377,7 @@ static std::optional<std::vector<std::byte>> Serve(
         history[req.id] = {req, res};
       }
 
-      if (RandomLoss()) {
+      if (res_lost) {
         std::clog << "Info: Response " << res.id << " is simulated to be lost"
                   << std::endl;
         return {};
@@ -393,7 +402,10 @@ static std::optional<std::vector<std::byte>> Serve(
       auto req = *req_res.second;
       std::clog << "Info: Received seat availability monitoring request from "
                 << from_addr << ": " << req << std::endl;
-      if (RandomLoss()) {
+
+      auto req_lost = RandomLoss(0.1);
+      auto res_lost = RandomLoss(0.2);
+      if (req_lost) {
         std::clog << "Info: Request " << req.id << " is simulated to be lost"
                   << std::endl;
         return {};
@@ -405,7 +417,7 @@ static std::optional<std::vector<std::byte>> Serve(
         std::clog << "Info: " << req.id << " is a duplicate request"
                   << std::endl;
         auto res = history[req.id].second;
-        if (RandomLoss()) {
+        if (res_lost) {
           std::clog << "Info: Response " << res.id << " is simulated to be lost"
                     << std::endl;
           return {};
@@ -453,7 +465,7 @@ static std::optional<std::vector<std::byte>> Serve(
         history[req.id] = {req, res};
       }
 
-      if (RandomLoss()) {
+      if (res_lost) {
         std::clog << "Info: Response " << res.id << " is simulated to be lost"
                   << std::endl;
         return {};

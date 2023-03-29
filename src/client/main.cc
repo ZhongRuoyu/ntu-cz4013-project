@@ -147,7 +147,10 @@ static std::optional<std::vector<std::byte>> ServeSeatAvailabilityCallbacks(
 
   auto req = *req_res.second;
   std::cout << "Received seat availability callback: " << req << std::endl;
-  if (RandomLoss()) {
+
+  auto req_lost = RandomLoss(0.1);
+  auto res_lost = RandomLoss(0.2);
+  if (req_lost) {
     std::clog << "Info: Callback request " << req.id
               << " is simulated to be lost" << std::endl;
     return {};
@@ -157,7 +160,7 @@ static std::optional<std::vector<std::byte>> ServeSeatAvailabilityCallbacks(
   if (semantic == InvocationSemantic::kAtMostOnce && history.contains(req.id)) {
     std::clog << "Info: " << req.id << " is a duplicate request" << std::endl;
     auto res = history[req.id].second;
-    if (RandomLoss()) {
+    if (res_lost) {
       std::clog << "Info: Callback response " << res.id
                 << " is simulated to be lost" << std::endl;
       return {};
@@ -175,7 +178,7 @@ static std::optional<std::vector<std::byte>> ServeSeatAvailabilityCallbacks(
     history[req.id] = {req, res};
   }
 
-  if (RandomLoss()) {
+  if (res_lost) {
     std::clog << "Info: Callback response " << res.id
               << " is simulated to be lost" << std::endl;
     return {};
