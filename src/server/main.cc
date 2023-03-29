@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
@@ -203,6 +204,10 @@ std::optional<std::vector<std::byte>> Serve(
           results.emplace_back(flight.second);
         }
       }
+      std::sort(results.begin(), results.end(),
+                [](const auto &lhs, const auto &rhs) {
+                  return lhs.identifier < rhs.identifier;
+                });
       if (results.empty()) {
         res.id = req.id;
         res.status_code = 1;
