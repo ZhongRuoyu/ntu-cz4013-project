@@ -1,0 +1,17 @@
+$ build/dfis_client at-least-once localhost 8080
+Info: At-least-once semantic is used
+Selections available:
+0. Exit
+1. Flight search
+2. Flight info
+3. Seat reservation
+4. Seat availability monitoring
+5. Price range search
+6. Seat reservation cancellation
+Enter selection: 3
+Enter identifier: 4013
+Enter number of seats to reserve: 3
+Info: Unable to receive response: Receive timed out
+Info: Retrying; attempt 1
+Received response:
+[15801924052325013138] 4013: 3 seat(s) reserved

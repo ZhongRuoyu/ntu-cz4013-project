@@ -1,0 +1,17 @@
+$ build/dfis_client at-most-once localhost 8080
+Info: At-most-once semantic is used
+Selections available:
+0. Exit
+1. Flight search
+2. Flight info
+3. Seat reservation
+4. Seat availability monitoring
+5. Price range search
+6. Seat reservation cancellation
+Enter selection: 2
+Enter identifier: 4013
+Info: Unable to receive response: Receive timed out
+Info: Retrying; attempt 1
+Received response:
+[11210914475417974042]
+4013 (LosAngeles -> Paris) @ 2023-05-15T05:00:00+0800 $399 (20 seat(s) avail.)
