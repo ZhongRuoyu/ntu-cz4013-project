@@ -153,9 +153,15 @@ std::optional<std::vector<std::byte>> Serve(
     std::chrono::system_clock::time_point monitor_end;
   };
 
+  struct Reservation {
+    srpc::i32 identifier;
+    srpc::i32 seats;
+  };
+
   static bool initialised = false;
   static std::unordered_map<srpc::i32, Flight> flights;
   static std::unordered_map<srpc::i32, std::vector<Callback>> callbacks;
+  static std::unordered_map<srpc::u64, Reservation> reservations;
 
   if (!initialised) {
     flights = flights_input;
@@ -368,23 +374,27 @@ std::optional<std::vector<std::byte>> Serve(
           res.message = {};
           res.identifier = req.identifier;
           res.seats = req.seats;
-        }
-        // Note: for simplicity, expired callbacks are not handled.
-        auto now = std::chrono::system_clock::now();
-        SeatAvailabilityCallbackRequest cb_req{
-            .identifier = flight.identifier,
-            .seat_availability = flight.seat_availability,
-        };
-        for (const auto &callback : callbacks[req.identifier]) {
-          if (now < callback.monitor_end) {
-            std::clog << "Info: Sending callback " << cb_req << " to "
-                      << callback.to_addr << std::endl;
-            std::thread{SendSeatAvailabilityCallbackRequest, callback.to_addr,
-                        cb_req}
-                .detach();
-          } else {
-            std::clog << "Info: Callback to " << callback.to_addr
-                      << " is expired" << std::endl;
+          reservations.emplace(req.id, Reservation{
+                                           .identifier = req.identifier,
+                                           .seats = req.seats,
+                                       });
+          // Note: for simplicity, expired callbacks are not handled.
+          auto now = std::chrono::system_clock::now();
+          SeatAvailabilityCallbackRequest cb_req{
+              .identifier = flight.identifier,
+              .seat_availability = flight.seat_availability,
+          };
+          for (const auto &callback : callbacks[req.identifier]) {
+            if (now < callback.monitor_end) {
+              std::clog << "Info: Sending callback " << cb_req << " to "
+                        << callback.to_addr << std::endl;
+              std::thread{SendSeatAvailabilityCallbackRequest, callback.to_addr,
+                          cb_req}
+                  .detach();
+            } else {
+              std::clog << "Info: Callback to " << callback.to_addr
+                        << " is expired" << std::endl;
+            }
           }
         }
       }
@@ -399,8 +409,8 @@ std::optional<std::vector<std::byte>> Serve(
       }
       RandomDelay();
 
-      std::clog << "Info: Sending flight info response to " << from_addr << ": "
-                << res << std::endl;
+      std::clog << "Info: Sending seat reservation response to " << from_addr
+                << ": " << res << std::endl;
       return srpc::Marshal<SeatReservationResponse>{}(res);
     }
   }
@@ -490,6 +500,195 @@ std::optional<std::vector<std::byte>> Serve(
       std::clog << "Info: Sending seat availability monitoring response to "
                 << from_addr << ": " << res << std::endl;
       return srpc::Marshal<SeatAvailabilityMonitoringResponse>{}(res);
+    }
+  }
+
+  {
+    auto req_res = srpc::Unmarshal<PriceRangeSearchRequest>{}(req_data);
+    if (req_res.second.has_value()) {
+      static std::unordered_map<srpc::u64, std::pair<PriceRangeSearchRequest,
+                                                     PriceRangeSearchResponse>>
+          history;
+
+      auto req = *req_res.second;
+      std::clog << "Info: Received price range search request from "
+                << from_addr << ": " << req << std::endl;
+
+      auto req_lost = RandomLoss(0.1);
+      auto res_lost = RandomLoss(0.2);
+      if (req_lost) {
+        std::clog << "Info: Request " << req.id << " is simulated to be lost"
+                  << std::endl;
+        return {};
+      }
+      RandomDelay();
+
+      if (semantic == InvocationSemantic::kAtMostOnce &&
+          history.contains(req.id)) {
+        std::clog << "Info: " << req.id << " is a duplicate request"
+                  << std::endl;
+        auto res = history[req.id].second;
+        if (res_lost) {
+          std::clog << "Info: Response " << res.id << " is simulated to be lost"
+                    << std::endl;
+          return {};
+        }
+        RandomDelay();
+        std::clog << "Info: Returning saved response " << res << std::endl;
+        return srpc::Marshal<PriceRangeSearchResponse>{}(res);
+      }
+
+      PriceRangeSearchResponse res;
+      std::vector<Flight> results;
+      for (const auto &flight : flights) {
+        if (flight.second.airfare >= req.from &&
+            flight.second.airfare <= req.to) {
+          results.emplace_back(flight.second);
+        }
+      }
+      std::sort(
+          results.begin(), results.end(), [](const auto &lhs, const auto &rhs) {
+            return lhs.airfare != rhs.airfare ? lhs.airfare < rhs.airfare
+                                              : lhs.identifier < rhs.identifier;
+          });
+      if (results.empty()) {
+        res.id = req.id;
+        res.status_code = 1;
+        res.message = "Flights not found";
+        res.flights = std::move(results);
+      } else {
+        res.id = req.id;
+        res.status_code = 0;
+        res.message = {};
+        res.flights = std::move(results);
+      }
+      if (semantic == InvocationSemantic::kAtMostOnce) {
+        history[req.id] = {req, res};
+      }
+
+      if (res_lost) {
+        std::clog << "Info: Response " << res.id << " is simulated to be lost"
+                  << std::endl;
+        return {};
+      }
+      RandomDelay();
+
+      std::clog << "Info: Sending price range search response to " << from_addr
+                << ": " << res << std::endl;
+      return srpc::Marshal<PriceRangeSearchResponse>{}(res);
+    }
+  }
+
+  {
+    auto req_res =
+        srpc::Unmarshal<SeatReservationCancellationRequest>{}(req_data);
+    if (req_res.second.has_value()) {
+      static std::unordered_map<srpc::u64,
+                                std::pair<SeatReservationCancellationRequest,
+                                          SeatReservationCancellationResponse>>
+          history;
+
+      auto req = *req_res.second;
+      std::clog << "Info: Received seat reservation cancellation request from "
+                << from_addr << ": " << req << std::endl;
+
+      auto req_lost = RandomLoss(0.1);
+      auto res_lost = RandomLoss(0.2);
+      if (req_lost) {
+        std::clog << "Info: Request " << req.id << " is simulated to be lost"
+                  << std::endl;
+        return {};
+      }
+      RandomDelay();
+
+      if (semantic == InvocationSemantic::kAtMostOnce &&
+          history.contains(req.id)) {
+        std::clog << "Info: " << req.id << " is a duplicate request"
+                  << std::endl;
+        auto res = history[req.id].second;
+        if (res_lost) {
+          std::clog << "Info: Response " << res.id << " is simulated to be lost"
+                    << std::endl;
+          return {};
+        }
+        RandomDelay();
+        std::clog << "Info: Returning saved response " << res << std::endl;
+        return srpc::Marshal<SeatReservationCancellationResponse>{}(res);
+      }
+
+      SeatReservationCancellationResponse res;
+      if (!reservations.contains(req.reservation_req_id)) {
+        res.id = req.id;
+        res.status_code = 1;
+        res.message = "Reservation not found";
+        res.identifier = 0;
+        res.seats = 0;
+      } else {
+        auto &reservation = reservations[req.reservation_req_id];
+        // Note: for simplicity, race condition is not handled.
+        if (reservation.identifier != req.identifier) {
+          res.id = req.id;
+          res.status_code = 2;
+          res.message = "Identifier mismatch";
+          res.identifier = 0;
+          res.seats = 0;
+        } else {
+          auto &flight = flights[req.identifier];
+          if (req.seats > reservation.seats) {
+            res.id = req.id;
+            res.status_code = 3;
+            res.message = "Too many seats to cancel";
+            res.identifier = 0;
+            res.seats = 0;
+          } else {
+            res.id = req.id;
+            reservation.seats -= req.seats;
+            std::clog << "Info: Reservation " << req.reservation_req_id
+                      << " now has " << reservation.seats << " seat(s) left"
+                      << std::endl;
+            flight.seat_availability += req.seats;
+            std::clog << "Info: Flight " << flight.identifier << " now has "
+                      << flight.seat_availability << " seat(s) left"
+                      << std::endl;
+            res.status_code = 0;
+            res.message = {};
+            res.identifier = req.identifier;
+            res.seats = req.seats;
+            // Note: for simplicity, expired callbacks are not handled.
+            auto now = std::chrono::system_clock::now();
+            SeatAvailabilityCallbackRequest cb_req{
+                .identifier = flight.identifier,
+                .seat_availability = flight.seat_availability,
+            };
+            for (const auto &callback : callbacks[req.identifier]) {
+              if (now < callback.monitor_end) {
+                std::clog << "Info: Sending callback " << cb_req << " to "
+                          << callback.to_addr << std::endl;
+                std::thread{SendSeatAvailabilityCallbackRequest,
+                            callback.to_addr, cb_req}
+                    .detach();
+              } else {
+                std::clog << "Info: Callback to " << callback.to_addr
+                          << " is expired" << std::endl;
+              }
+            }
+          }
+        }
+      }
+      if (semantic == InvocationSemantic::kAtMostOnce) {
+        history[req.id] = {req, res};
+      }
+
+      if (res_lost) {
+        std::clog << "Info: Response " << res.id << " is simulated to be lost"
+                  << std::endl;
+        return {};
+      }
+      RandomDelay();
+
+      std::clog << "Info: Sending seat reservation cancellation response to "
+                << from_addr << ": " << res << std::endl;
+      return srpc::Marshal<SeatReservationCancellationResponse>{}(res);
     }
   }
 

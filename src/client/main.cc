@@ -230,6 +230,8 @@ int main(int argc, char **argv) {
 2. Flight info
 3. Seat reservation
 4. Seat availability monitoring
+5. Price range search
+6. Seat reservation cancellation
 Enter selection: )SEL"
               << std::flush;
     std::string line;
@@ -298,6 +300,31 @@ Enter selection: )SEL"
           std::chrono::system_clock::from_time_t(res->monitor_end));
       continue;
     }
+    if (line == "5") {
+      PriceRangeSearchRequest req;
+      req.from = PromptForInput<srpc::f32>("Enter lower bound of price range: ",
+                                           "Please enter a number: ");
+      req.to = PromptForInput<srpc::f32>("Enter upper bound of price range: ",
+                                         "Please enter a number: ");
+      SendAndReceive<PriceRangeSearchRequest, PriceRangeSearchResponse>(
+          server_addr, server_port, req);
+      continue;
+    }
+    if (line == "6") {
+      SeatReservationCancellationRequest req;
+      req.reservation_req_id =
+          PromptForInput<srpc::u64>("Enter reservation request identifier: ",
+                                    "Please enter a non-negative integer: ");
+      req.identifier = PromptForInput<srpc::i32>("Enter flight identifier: ",
+                                                 "Please enter an integer: ");
+      req.seats = PromptForInput<srpc::i32>("Enter number of seats to cancel: ",
+                                            "Please enter an integer: ");
+      SendAndReceive<SeatReservationCancellationRequest,
+                     SeatReservationCancellationResponse>(server_addr,
+                                                          server_port, req);
+      continue;
+    }
+
     std::cerr << "Please enter a valid selection." << std::endl;
   }
 }
