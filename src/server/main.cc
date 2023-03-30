@@ -144,7 +144,8 @@ void SendSeatAvailabilityCallbackRequest(const srpc::SocketAddress &to_addr,
 }
 
 std::optional<std::vector<std::byte>> Serve(
-    InvocationSemantic semantic, std::unordered_map<srpc::i32, Flight> &flights,
+    InvocationSemantic semantic,
+    const std::unordered_map<srpc::i32, Flight> &flights_input,
     const srpc::SocketAddress &from_addr,
     srpc::Result<std::vector<std::byte>> req_data_res) {
   struct Callback {
@@ -152,7 +153,14 @@ std::optional<std::vector<std::byte>> Serve(
     std::chrono::system_clock::time_point monitor_end;
   };
 
+  static bool initialised = false;
+  static std::unordered_map<srpc::i32, Flight> flights;
   static std::unordered_map<srpc::i32, std::vector<Callback>> callbacks;
+
+  if (!initialised) {
+    flights = flights_input;
+    initialised = true;
+  }
 
   if (!req_data_res.OK()) {
     std::cerr << "Error: Could not receive request from " << from_addr << ": "
@@ -527,8 +535,7 @@ int main(int argc, char **argv) {
 
   auto server = std::move(server_res.Value());
   std::clog << "Info: Server listening at port " << port << std::endl;
-  server->Listen(
-      [semantic, &flights](const auto &from_addr, auto req_data_res) {
-        return Serve(semantic, flights, from_addr, req_data_res);
-      });
+  server->Listen([semantic, flights](const auto &from_addr, auto req_data_res) {
+    return Serve(semantic, flights, from_addr, req_data_res);
+  });
 }
