@@ -30,6 +30,13 @@ Below lists important files and directories found in this directory.
   unmarshalling as well as some utility functions.
 - `CMakeLists.txt`: This file contains build descriptions of DFIS.
 
+## Documentation
+
+Detailed documentation on the design can be found in the project report attached
+(not available in this directory). In particular, a detailed explaination of
+SRPC's UDP interfaces is available in the "SRPC (Session and Presentation
+Layers)" section.
+
 ## How to build
 
 CMake is the build tool for DFIS. In addition to CMake, a recent C++ compiler is
