@@ -113,7 +113,7 @@ Marshal<dfis::SeatReservationResponse>::operator()(
                  std::span<std::byte, sizeof(i32)>{data.data(),
                                                    data.data() + sizeof(i32)});
 
-  auto id = Marshal<i64>{}(response.id);
+  auto id = Marshal<u64>{}(response.id);
   data.insert(data.end(), id.begin(), id.end());
 
   auto status_code = Marshal<i32>{}(response.status_code);
