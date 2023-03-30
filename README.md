@@ -14,7 +14,8 @@ Below lists important files and directories found in this directory.
 - `src`: This directory stores all the source code of DFIS.
 - `srpc`: This directory stores source code of the SRPC submodule. SRPC is an
   independent module ready for general usage, so it is maintained in its own
-  dedicated repository. DFIS uses SRPC by statically linking with it.
+  dedicated repository. DFIS uses SRPC by statically linking with it. Note that
+  SRPC provides TCP components too, but they are not used by DFIS.
   - `examples`: This subdirectory provides several independent examples
     illustrating how to write simple programs using SRPC. DFIS is implemented in
     a similar way.
