@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <ostream>
 #include <random>
@@ -79,16 +80,9 @@ bool RandomLoss(srpc::f32 loss_prob = 0.1) {
 }
 
 template <typename Req, typename Res>
-std::optional<Res> SendAndReceive(const std::string &server_addr,
+std::optional<Res> SendAndReceive(std::unique_ptr<srpc::DatagramClient> &client,
+                                  const std::string &server_addr,
                                   srpc::u16 server_port, Req req) {
-  auto client_res = srpc::DatagramClient::New(server_addr, server_port);
-  if (!client_res.OK()) {
-    std::cerr << "Error: Unable to create client: " << client_res.Error()
-              << std::endl;
-    return {};
-  }
-
-  auto client = std::move(client_res.Value());
   req.id = MakeMessageIdentifier();
 
   std::vector<std::byte> resp_bytes;
@@ -217,6 +211,15 @@ int main(int argc, char **argv) {
     std::exit(EXIT_FAILURE);
   }
 
+  auto client_res = srpc::DatagramClient::New(server_addr, server_port);
+  if (!client_res.OK()) {
+    std::cerr << "Error: Unable to create client: " << client_res.Error()
+              << std::endl;
+    // NOLINTNEXTLINE(concurrency-mt-unsafe)
+    std::exit(EXIT_FAILURE);
+  }
+  auto client = std::move(client_res.Value());
+
   bool first_launch = true;
   for (;;) {
     if (first_launch) {
@@ -245,14 +248,14 @@ Enter selection: )SEL"
       req.destination = PromptForInput<std::string>("Enter destination: ",
                                                     "Please enter a string: ");
       SendAndReceive<FlightSearchRequest, FlightSearchResponse>(
-          server_addr, server_port, req);
+          client, server_addr, server_port, req);
       continue;
     }
     if (line == "2") {
       FlightInfoRequest req;
       req.identifier = PromptForInput<srpc::i32>("Enter identifier: ",
                                                  "Please enter an integer: ");
-      SendAndReceive<FlightInfoRequest, FlightInfoResponse>(server_addr,
+      SendAndReceive<FlightInfoRequest, FlightInfoResponse>(client, server_addr,
                                                             server_port, req);
       continue;
     }
@@ -263,7 +266,7 @@ Enter selection: )SEL"
       req.seats = PromptForInput<srpc::i32>(
           "Enter number of seats to reserve: ", "Please enter an integer: ");
       SendAndReceive<SeatReservationRequest, SeatReservationResponse>(
-          server_addr, server_port, req);
+          client, server_addr, server_port, req);
       continue;
     }
     if (line == "4") {
@@ -276,7 +279,7 @@ Enter selection: )SEL"
           "Enter monitor interval in seconds: ", "Please enter an integer: ");
       auto res = SendAndReceive<SeatAvailabilityMonitoringRequest,
                                 SeatAvailabilityMonitoringResponse>(
-          server_addr, server_port, req);
+          client, server_addr, server_port, req);
       if (!res.has_value()) {
         continue;
       }
@@ -307,7 +310,7 @@ Enter selection: )SEL"
       req.to = PromptForInput<srpc::f32>("Enter upper bound of price range: ",
                                          "Please enter a number: ");
       SendAndReceive<PriceRangeSearchRequest, PriceRangeSearchResponse>(
-          server_addr, server_port, req);
+          client, server_addr, server_port, req);
       continue;
     }
     if (line == "6") {
@@ -320,7 +323,7 @@ Enter selection: )SEL"
       req.seats = PromptForInput<srpc::i32>("Enter number of seats to cancel: ",
                                             "Please enter an integer: ");
       SendAndReceive<SeatReservationCancellationRequest,
-                     SeatReservationCancellationResponse>(server_addr,
+                     SeatReservationCancellationResponse>(client, server_addr,
                                                           server_port, req);
       continue;
     }
