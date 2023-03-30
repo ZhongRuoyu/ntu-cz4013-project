@@ -40,6 +40,31 @@ struct SeatReservationResponse {
 std::ostream &operator<<(std::ostream &os,
                          const SeatReservationResponse &response);
 
+struct SeatReservationCancellationRequest {
+  static constexpr MessageType kMessageType =
+      MessageType::kSeatReservationCancellationRequest;
+  srpc::u64 id;
+  srpc::u64 reservation_req_id;
+  srpc::i32 identifier;
+  srpc::i32 seats;
+};
+
+std::ostream &operator<<(std::ostream &os,
+                         const SeatReservationCancellationRequest &request);
+
+struct SeatReservationCancellationResponse {
+  static constexpr MessageType kMessageType =
+      MessageType::kSeatReservationCancellationResponse;
+  srpc::u64 id;
+  srpc::i32 status_code;
+  std::string message;
+  srpc::i32 identifier;
+  srpc::i32 seats;
+};
+
+std::ostream &operator<<(std::ostream &os,
+                         const SeatReservationCancellationResponse &response);
+
 }  // namespace dfis
 
 namespace srpc {
@@ -65,6 +90,32 @@ struct Marshal<dfis::SeatReservationResponse> {
 template <>
 struct Unmarshal<dfis::SeatReservationResponse> {
   [[nodiscard]] std::pair<i64, std::optional<dfis::SeatReservationResponse>>
+  operator()(const std::span<const std::byte> &data) const;
+};
+
+template <>
+struct Marshal<dfis::SeatReservationCancellationRequest> {
+  [[nodiscard]] std::vector<std::byte> operator()(
+      const dfis::SeatReservationCancellationRequest &request) const;
+};
+
+template <>
+struct Unmarshal<dfis::SeatReservationCancellationRequest> {
+  [[nodiscard]] std::pair<
+      i64, std::optional<dfis::SeatReservationCancellationRequest>>
+  operator()(const std::span<const std::byte> &data) const;
+};
+
+template <>
+struct Marshal<dfis::SeatReservationCancellationResponse> {
+  [[nodiscard]] std::vector<std::byte> operator()(
+      const dfis::SeatReservationCancellationResponse &response) const;
+};
+
+template <>
+struct Unmarshal<dfis::SeatReservationCancellationResponse> {
+  [[nodiscard]] std::pair<
+      i64, std::optional<dfis::SeatReservationCancellationResponse>>
   operator()(const std::span<const std::byte> &data) const;
 };
 

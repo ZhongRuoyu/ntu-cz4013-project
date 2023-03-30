@@ -20,7 +20,7 @@ namespace dfis {
 std::ostream &operator<<(std::ostream &os,
                          const SeatReservationRequest &request) {
   os << "[" << request.id << "] " << request.identifier << " (" << request.seats
-     << ")";
+     << " seat(s))";
   return os;
 }
 
@@ -31,6 +31,24 @@ std::ostream &operator<<(std::ostream &os,
     os << "Error: " << response.message;
   } else {
     os << response.identifier << ": " << response.seats << " seat(s) reserved";
+  }
+  return os;
+}
+
+std::ostream &operator<<(std::ostream &os,
+                         const SeatReservationCancellationRequest &request) {
+  os << "[" << request.id << "] Cancelling " << request.reservation_req_id
+     << " (" << request.identifier << "; " << request.seats << " seat(s))";
+  return os;
+}
+
+std::ostream &operator<<(std::ostream &os,
+                         const SeatReservationCancellationResponse &response) {
+  os << "[" << response.id << "] ";
+  if (response.status_code != 0) {
+    os << "Error: " << response.message;
+  } else {
+    os << response.identifier << ": " << response.seats << " seat(s) cancelled";
   }
   return os;
 }
@@ -184,6 +202,175 @@ Unmarshal<dfis::SeatReservationResponse>::operator()(
   p += sizeof(i32);
 
   return {p, dfis::SeatReservationResponse{
+                 .id = id,
+                 .status_code = status_code,
+                 .message = message,
+                 .identifier = identifier,
+                 .seats = seats,
+             }};
+}
+
+[[nodiscard]] std::vector<std::byte>
+Marshal<dfis::SeatReservationCancellationRequest>::operator()(
+    const dfis::SeatReservationCancellationRequest &request) const {
+  std::vector<std::byte> data(sizeof(i32));
+
+  Marshal<i32>{}(
+      static_cast<i32>(dfis::SeatReservationCancellationRequest::kMessageType),
+      std::span<std::byte, sizeof(i32)>{data.data(),
+                                        data.data() + sizeof(i32)});
+
+  auto id = Marshal<u64>{}(request.id);
+  data.insert(data.end(), id.begin(), id.end());
+
+  auto reservation_req_id = Marshal<u64>{}(request.reservation_req_id);
+  data.insert(data.end(), reservation_req_id.begin(), reservation_req_id.end());
+
+  auto identifier = Marshal<i32>{}(request.identifier);
+  data.insert(data.end(), identifier.begin(), identifier.end());
+
+  auto seats = Marshal<i32>{}(request.seats);
+  data.insert(data.end(), seats.begin(), seats.end());
+
+  return data;
+}
+
+[[nodiscard]] std::pair<i64,
+                        std::optional<dfis::SeatReservationCancellationRequest>>
+Unmarshal<dfis::SeatReservationCancellationRequest>::operator()(
+    const std::span<const std::byte> &data) const {
+  if (data.size() < sizeof(i32)) {
+    return {0, {}};
+  }
+
+  auto message_type = Unmarshal<i32>{}(std::span<const std::byte, sizeof(i32)>{
+      data.data(), data.data() + sizeof(i32)});
+  if (dfis::MessageType{message_type} !=
+      dfis::SeatReservationCancellationRequest::kMessageType) {
+    return {0, {}};
+  }
+
+  i64 p = sizeof(i32);
+
+  if (p + sizeof(u64) > data.size()) {
+    return {0, {}};
+  }
+  auto id = Unmarshal<u64>{}(std::span<const std::byte, sizeof(u64)>{
+      data.data() + p, data.data() + p + sizeof(u64)});
+  p += sizeof(u64);
+
+  if (p + sizeof(u64) > data.size()) {
+    return {0, {}};
+  }
+  auto reservation_req_id =
+      Unmarshal<u64>{}(std::span<const std::byte, sizeof(u64)>{
+          data.data() + p, data.data() + p + sizeof(u64)});
+  p += sizeof(u64);
+
+  if (p + sizeof(i32) > data.size()) {
+    return {0, {}};
+  }
+  auto identifier = Unmarshal<i32>{}(std::span<const std::byte, sizeof(i32)>{
+      data.data() + p, data.data() + p + sizeof(i32)});
+  p += sizeof(i32);
+
+  if (p + sizeof(i32) > data.size()) {
+    return {0, {}};
+  }
+  auto seats = Unmarshal<i32>{}(std::span<const std::byte, sizeof(i32)>{
+      data.data() + p, data.data() + p + sizeof(i32)});
+  p += sizeof(i32);
+
+  return {p, dfis::SeatReservationCancellationRequest{
+                 .id = id,
+                 .reservation_req_id = reservation_req_id,
+                 .identifier = identifier,
+                 .seats = seats,
+             }};
+}
+
+[[nodiscard]] std::vector<std::byte>
+Marshal<dfis::SeatReservationCancellationResponse>::operator()(
+    const dfis::SeatReservationCancellationResponse &response) const {
+  std::vector<std::byte> data(sizeof(i32));
+
+  Marshal<i32>{}(
+      static_cast<i32>(dfis::SeatReservationCancellationResponse::kMessageType),
+      std::span<std::byte, sizeof(i32)>{data.data(),
+                                        data.data() + sizeof(i32)});
+
+  auto id = Marshal<u64>{}(response.id);
+  data.insert(data.end(), id.begin(), id.end());
+
+  auto status_code = Marshal<i32>{}(response.status_code);
+  data.insert(data.end(), status_code.begin(), status_code.end());
+
+  auto message = Marshal<std::string>{}(response.message);
+  data.insert(data.end(), message.begin(), message.end());
+
+  auto identifier = Marshal<i32>{}(response.identifier);
+  data.insert(data.end(), identifier.begin(), identifier.end());
+
+  auto seats = Marshal<i32>{}(response.seats);
+  data.insert(data.end(), seats.begin(), seats.end());
+
+  return data;
+}
+
+[[nodiscard]] std::pair<
+    i64, std::optional<dfis::SeatReservationCancellationResponse>>
+Unmarshal<dfis::SeatReservationCancellationResponse>::operator()(
+    const std::span<const std::byte> &data) const {
+  if (data.size() < sizeof(i32)) {
+    return {0, {}};
+  }
+
+  auto message_type = Unmarshal<i32>{}(std::span<const std::byte, sizeof(i32)>{
+      data.data(), data.data() + sizeof(i32)});
+  if (dfis::MessageType{message_type} !=
+      dfis::SeatReservationCancellationResponse::kMessageType) {
+    return {0, {}};
+  }
+
+  i64 p = sizeof(i32);
+
+  if (p + sizeof(u64) > data.size()) {
+    return {0, {}};
+  }
+  auto id = Unmarshal<u64>{}(std::span<const std::byte, sizeof(u64)>{
+      data.data() + p, data.data() + p + sizeof(u64)});
+  p += sizeof(u64);
+
+  if (p + sizeof(i32) > data.size()) {
+    return {0, {}};
+  }
+  auto status_code = Unmarshal<i32>{}(std::span<const std::byte, sizeof(i32)>{
+      data.data() + p, data.data() + p + sizeof(i32)});
+  p += sizeof(i32);
+
+  auto message_res = Unmarshal<std::string>{}(
+      std::span<const std::byte>{data.data() + p, data.data() + data.size()});
+  if (!message_res.second.has_value()) {
+    return {0, {}};
+  }
+  auto message = std::move(*message_res.second);
+  p += message_res.first;
+
+  if (p + sizeof(i32) > data.size()) {
+    return {0, {}};
+  }
+  auto identifier = Unmarshal<i32>{}(std::span<const std::byte, sizeof(i32)>{
+      data.data() + p, data.data() + p + sizeof(i32)});
+  p += sizeof(i32);
+
+  if (p + sizeof(i32) > data.size()) {
+    return {0, {}};
+  }
+  auto seats = Unmarshal<i32>{}(std::span<const std::byte, sizeof(i32)>{
+      data.data() + p, data.data() + p + sizeof(i32)});
+  p += sizeof(i32);
+
+  return {p, dfis::SeatReservationCancellationResponse{
                  .id = id,
                  .status_code = status_code,
                  .message = message,
