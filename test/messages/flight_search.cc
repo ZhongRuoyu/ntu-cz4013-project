@@ -3,7 +3,6 @@
 #include <gtest/gtest.h>
 #include <srpc/types/serialization.h>
 
-#include "messages/flight.h"
 #include "utils/rand.h"
 
 using namespace dfis;
@@ -52,22 +51,7 @@ TEST(Message, MarshalAndUnmarshalFlightSearchResponses) {
       .id = MakeMessageIdentifier(),
       .status_code = 0,
       .message = {},
-      .flights = {Flight{
-                      .identifier = 4013,
-                      .source = "Guangzhou",
-                      .destination = "Singapore",
-                      .departure_time = 1675526400,
-                      .airfare = 314.15,
-                      .seat_availability = 42,
-                  },
-                  Flight{
-                      .identifier = 4014,
-                      .source = "Singapore",
-                      .destination = "Brussels",
-                      .departure_time = 1675612800,
-                      .airfare = 926.53,
-                      .seat_availability = 84,
-                  }},
+      .flights = {4013, 4014},
   };
   auto data2 = srpc::Marshal<dfis::FlightSearchResponse>{}(resp2);
   auto res2 = srpc::Unmarshal<dfis::FlightSearchResponse>{}(data2);
@@ -124,22 +108,7 @@ TEST(Message, MarshalAndUnmarshalPriceRangeSearchResponses) {
       .id = MakeMessageIdentifier(),
       .status_code = 0,
       .message = {},
-      .flights = {Flight{
-                      .identifier = 4013,
-                      .source = "Guangzhou",
-                      .destination = "Singapore",
-                      .departure_time = 1675526400,
-                      .airfare = 314.15,
-                      .seat_availability = 42,
-                  },
-                  Flight{
-                      .identifier = 4014,
-                      .source = "Singapore",
-                      .destination = "Brussels",
-                      .departure_time = 1675612800,
-                      .airfare = 926.53,
-                      .seat_availability = 84,
-                  }},
+      .flights = {4013, 4014},
   };
   auto data2 = srpc::Marshal<dfis::PriceRangeSearchResponse>{}(resp2);
   auto res2 = srpc::Unmarshal<dfis::PriceRangeSearchResponse>{}(data2);

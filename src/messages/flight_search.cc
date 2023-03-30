@@ -8,14 +8,13 @@
 #include <utility>
 #include <vector>
 
+#include <srpc/types/floats.h>
 #include <srpc/types/integers.h>
 #include <srpc/types/serialization.h>
 #include <srpc/types/strings.h>
 #include <srpc/types/vectors.h>
 
-#include "messages/flight.h"
 #include "messages/message_type.h"
-#include "srpc/types/floats.h"
 
 namespace dfis {
 
@@ -27,13 +26,21 @@ std::ostream &operator<<(std::ostream &os, const FlightSearchRequest &request) {
 
 std::ostream &operator<<(std::ostream &os,
                          const FlightSearchResponse &response) {
+  os << "[" << response.id << "] ";
   if (response.status_code != 0) {
-    os << "[" << response.id << "] Error: " << response.message;
+    os << "Error: " << response.message;
   } else {
-    os << "[" << response.id << "]\n";
+    os << "{";
+    bool is_first = true;
     for (const auto &flight : response.flights) {
-      os << flight << "\n";
+      if (is_first) {
+        is_first = false;
+      } else {
+        os << ", ";
+      }
+      os << flight;
     }
+    os << "}";
   }
   return os;
 }
@@ -46,13 +53,21 @@ std::ostream &operator<<(std::ostream &os,
 
 std::ostream &operator<<(std::ostream &os,
                          const PriceRangeSearchResponse &response) {
+  os << "[" << response.id << "] ";
   if (response.status_code != 0) {
-    os << "[" << response.id << "] Error: " << response.message;
+    os << "Error: " << response.message;
   } else {
-    os << "[" << response.id << "]\n";
+    os << "{";
+    bool is_first = true;
     for (const auto &flight : response.flights) {
-      os << flight << "\n";
+      if (is_first) {
+        is_first = false;
+      } else {
+        os << ", ";
+      }
+      os << flight;
     }
+    os << "}";
   }
   return os;
 }
@@ -146,7 +161,7 @@ Marshal<dfis::FlightSearchResponse>::operator()(
   auto message = Marshal<std::string>{}(response.message);
   data.insert(data.end(), message.begin(), message.end());
 
-  auto flights = Marshal<std::vector<dfis::Flight>>{}(response.flights);
+  auto flights = Marshal<std::vector<i32>>{}(response.flights);
   data.insert(data.end(), flights.begin(), flights.end());
 
   return data;
@@ -190,7 +205,7 @@ Unmarshal<dfis::FlightSearchResponse>::operator()(
   auto message = std::move(*message_res.second);
   p += message_res.first;
 
-  auto flights_res = Unmarshal<std::vector<dfis::Flight>>{}(
+  auto flights_res = Unmarshal<std::vector<i32>>{}(
       std::span<const std::byte>{data.data() + p, data.data() + data.size()});
   if (!flights_res.second.has_value()) {
     return {0, {}};
@@ -289,7 +304,7 @@ Marshal<dfis::PriceRangeSearchResponse>::operator()(
   auto message = Marshal<std::string>{}(response.message);
   data.insert(data.end(), message.begin(), message.end());
 
-  auto flights = Marshal<std::vector<dfis::Flight>>{}(response.flights);
+  auto flights = Marshal<std::vector<i32>>{}(response.flights);
   data.insert(data.end(), flights.begin(), flights.end());
 
   return data;
@@ -333,7 +348,7 @@ Unmarshal<dfis::PriceRangeSearchResponse>::operator()(
   auto message = std::move(*message_res.second);
   p += message_res.first;
 
-  auto flights_res = Unmarshal<std::vector<dfis::Flight>>{}(
+  auto flights_res = Unmarshal<std::vector<i32>>{}(
       std::span<const std::byte>{data.data() + p, data.data() + data.size()});
   if (!flights_res.second.has_value()) {
     return {0, {}};

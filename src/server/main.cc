@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <optional>
 #include <ostream>
@@ -211,17 +212,14 @@ std::optional<std::vector<std::byte>> Serve(
       }
 
       FlightSearchResponse res;
-      std::vector<Flight> results;
+      std::vector<srpc::i32> results;
       for (const auto &flight : flights) {
         if (flight.second.source == req.source &&
             flight.second.destination == req.destination) {
-          results.emplace_back(flight.second);
+          results.emplace_back(flight.second.identifier);
         }
       }
-      std::sort(results.begin(), results.end(),
-                [](const auto &lhs, const auto &rhs) {
-                  return lhs.identifier < rhs.identifier;
-                });
+      std::sort(results.begin(), results.end(), std::less<srpc::i32>{});
       if (results.empty()) {
         res.id = req.id;
         res.status_code = 1;
@@ -539,18 +537,14 @@ std::optional<std::vector<std::byte>> Serve(
       }
 
       PriceRangeSearchResponse res;
-      std::vector<Flight> results;
+      std::vector<srpc::i32> results;
       for (const auto &flight : flights) {
         if (flight.second.airfare >= req.from &&
             flight.second.airfare <= req.to) {
-          results.emplace_back(flight.second);
+          results.emplace_back(flight.second.identifier);
         }
       }
-      std::sort(
-          results.begin(), results.end(), [](const auto &lhs, const auto &rhs) {
-            return lhs.airfare != rhs.airfare ? lhs.airfare < rhs.airfare
-                                              : lhs.identifier < rhs.identifier;
-          });
+      std::sort(results.begin(), results.end(), std::less<srpc::i32>{});
       if (results.empty()) {
         res.id = req.id;
         res.status_code = 1;

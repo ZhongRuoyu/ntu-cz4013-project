@@ -9,10 +9,10 @@
 #include <utility>
 #include <vector>
 
+#include <srpc/types/floats.h>
 #include <srpc/types/integers.h>
 #include <srpc/types/serialization.h>
 
-#include "messages/flight.h"
 #include "messages/message_type.h"
 
 namespace dfis {
@@ -32,7 +32,7 @@ struct FlightSearchResponse {
   srpc::u64 id;
   srpc::i32 status_code;
   std::string message;
-  std::vector<dfis::Flight> flights;
+  std::vector<srpc::i32> flights;
 };
 
 std::ostream &operator<<(std::ostream &os,
@@ -54,7 +54,7 @@ struct PriceRangeSearchResponse {
   srpc::u64 id;
   srpc::i32 status_code;
   std::string message;
-  std::vector<dfis::Flight> flights;
+  std::vector<srpc::i32> flights;
 };
 
 std::ostream &operator<<(std::ostream &os,
